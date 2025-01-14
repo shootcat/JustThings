@@ -1,1 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willkommen Kim</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: url('https://source.unsplash.com/random/1920x1080') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+        }
+
+        .overlay {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, p {
+            margin: 0;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin: 10px 0 20px;
+        }
+
+        a {
+            display: inline-block;
+            text-decoration: none;
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        a:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <h1>Willkommen Kim</h1>
+        <p>Möchtest du deine Zukunft erfahren?</p>
+        <a href="zukunft.html">Klicke hier</a>
+    </div>
+</body>
+</html>
 
