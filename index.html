@@ -18,11 +18,13 @@
         }
 
         .overlay {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px 40px;
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 90%;
+            width: 400px;
         }
 
         h1, p {
@@ -31,11 +33,11 @@
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: 2rem;
         }
 
         p {
-            font-size: 2.0rem;
+            font-size: 1.2rem;
             margin: 10px 0 20px;
         }
 
@@ -47,19 +49,50 @@
             padding: 10px 20px;
             border-radius: 5px;
             transition: background 0.3s;
+            font-size: 1rem;
         }
 
         a:hover {
             background: #555;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            a {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            p {
+                font-size: 0.9rem;
+            }
+
+            a {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="overlay">
-        <h1>Hallo Prinzessa</h1>
+        <h1>Hallo Prinzessin</h1>
         <p>Wir haben eine Nachricht für dich</p>
         <a href="zukunft.html">Bitte klicke hier</a>
     </div>
 </body>
 </html>
-
