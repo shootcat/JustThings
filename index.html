@@ -3,96 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Willkommen Kim</title>
+    <title>Prüfen und Generieren</title>
     <style>
+        /* Hintergrundbild */
         body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
+            background-image: url('a.png'); /* Das Bild "a" im Root-Verzeichnis */
+            background-color: black;
+            background-size: cover;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: url('https://raw.githubusercontent.com/shootcat/JustThings/refs/heads/main/DALL%C2%B7E%202025-01-14%2011.59.29%20-%20A%20romantic%20botanical%20background%20featuring%20a%20lush%20Monstera%20plant%20with%20its%20large%2C%20iconic%20leaves%20framing%20the%20edges%20of%20the%20image.%20The%20center%20is%20kept%20clear.webp') no-repeat center center fixed;
-            background-size: cover;
-            font-family: Arial, sans-serif;
-        }
-
-        .overlay {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            max-width: 90%;
-            width: 400px;
-        }
-
-        h1, p {
+            height: 100vh;
             margin: 0;
-            color: #333;
+            color: white;
         }
 
-        h1 {
-            font-size: 2rem;
+        /* Container für die Eingabe und den Button */
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
         }
 
-        p {
-            font-size: 1.2rem;
-            margin: 10px 0 20px;
+        /* Eingabefeld */
+        input[type="text"] {
+            padding: 10px;
+            width: 80%;
+            border-radius: 20px;
+            border: 2px solid #ccc;
+            margin-bottom: 20px;
+            font-size: 16px;
         }
 
-        a {
-            display: inline-block;
-            text-decoration: none;
-            background: #333;
-            color: #fff;
+        /* Button */
+        button {
             padding: 10px 20px;
-            border-radius: 5px;
-            transition: background 0.3s;
-            font-size: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
         }
 
-        a:hover {
-            background: #555;
+        button:hover {
+            background-color: #45a049;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            p {
-                font-size: 1rem;
-            }
-
-            a {
-                font-size: 0.9rem;
-                padding: 8px 16px;
-            }
+        /* Ladeanimation */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
         }
 
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            p {
-                font-size: 0.9rem;
-            }
-
-            a {
-                font-size: 0.8rem;
-                padding: 6px 12px;
-            }
+        .loading img {
+            width: 50px;
+            height: 50px;
         }
+
+        .loading p {
+            margin-top: 10px;
+        }
+
+        /* Weiterleitungsbutton */
+        .next-button {
+            display: none;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .next-button:hover {
+            background-color: #45a049;
+        }
+
     </style>
 </head>
 <body>
-    <div class="overlay">
-        <h1>Hallo Prinzessin</h1>
-        <p>Wir haben eine Nachricht für dich</p>
-        <a href="zukunft.html">Bitte klicke hier</a>
+
+<div class="container">
+    <h1>Prüfen und Generieren</h1>
+    <input type="text" id="nameInput" placeholder="Gib deinen Namen ein">
+    <button onclick="checkName()">Prüfen und Generieren</button>
+
+    <div class="loading" id="loading">
+        <img src="b.gif" alt="Ladeanimation">
+        <p id="loadingText">Lade Daten...</p>
     </div>
+
+    <button class="next-button" id="nextButton" onclick="window.location.href='bde.html'">Weiter</button>
+</div>
+
+<script>
+    function checkName() {
+        const name = document.getElementById('nameInput').value;
+
+        // Hier wird der Name überprüft. In einer echten App würde man eine API oder Serveranfrage verwenden, um die Datei zu prüfen.
+        const namesList = ['Max', 'Anna', 'Peter']; // Beispielhafte Liste von Namen
+
+        if (namesList.includes(name)) {
+            // Wenn der Name vorhanden ist, starten wir die Ladeanimation
+            document.querySelector('button').style.display = 'none'; // Verstecke den Button
+            document.getElementById('loading').style.display = 'block'; // Zeige die Ladeanimation
+            let count = 0;
+            const loadingText = [
+                "Lade Daten...",
+                "Generiere Einladung...",
+                "Streichle Hund...",
+                "Füttere Katze...",
+                "Einladung fast geladen..."
+            ];
+
+            const interval = setInterval(() => {
+                document.getElementById('loadingText').innerText = loadingText[count];
+                count = (count + 1) % loadingText.length;
+            }, 2000); // Wechsel alle 2 Sekunden
+
+            // Nach 10 Sekunden, Weiterleitungsbutton anzeigen
+            setTimeout(() => {
+                clearInterval(interval); // Stoppe die Textwechsel-Animation
+                document.getElementById('loading').style.display = 'none'; // Verstecke Ladeanimation
+                document.getElementById('nextButton').style.display = 'block'; // Zeige Weiterbutton
+            }, 10000); // Warte 10 Sekunden
+        } else {
+            alert('Leider keine Übereinstimmung.');
+        }
+    }
+</script>
+
 </body>
 </html>
