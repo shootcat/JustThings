@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einladung</title>
+    <style>
+        /* Hintergrundbild */
+        body {
+            background-image: url('c.jpg'); /* Das Bild "c" im Root-Verzeichnis */
+            background-size: cover;
+            background-position: center;
+            font-family: 'Georgia', serif;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        /* Einladungskarte */
+        .card {
+            background: rgba(0, 0, 0, 0.7); /* Dunkler transparenter Hintergrund */
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); /* Eleganter Leuchteffekt */
+            max-width: 500px;
+            width: 90%;
+        }
+
+        /* Titel */
+        .card h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #ffcc66; /* Kerzenähnliche Farbe */
+            text-shadow: 0 0 10px rgba(255, 204, 102, 0.8);
+        }
+
+        /* Textstil */
+        .card p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        /* Hervorhebung */
+        .card p span {
+            color: #ff9933;
+            font-weight: bold;
+        }
+
+        /* Button (falls eine Rückmeldung oder weitere Infos gewünscht sind) */
+        .card button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #33cc99;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(51, 204, 153, 0.7);
+            transition: all 0.3s ease;
+        }
+
+        .card button:hover {
+            background-color: #66ffcc;
+            box-shadow: 0 0 15px rgba(102, 255, 204, 1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Einladung zu meinem Geburtstag!</h1>
+    <p>Hallo,</p>
+    <p>Ich lade dich herzlich ein, meinen Geburtstag zu feiern!</p>
+    <p><span>Datum:</span> Freitag, 16. Februar</p>
+    <p><span>Ort:</span> Dinkelbergstraße</p>
+    <p><span>Uhrzeit:</span> 17:00 Uhr</p>
+    <p><span>Zu Essen:</span> Käsefondue</p>
+    <p>Ich freue mich sehr, wenn du dabei bist!</p>
+    <!-- Optionaler Button für Rückmeldung -->
+    <!-- <button onclick="alert('Danke für deine Rückmeldung!')">Ich bin dabei!</button> -->
+</div>
+
+</body>
+</html>
