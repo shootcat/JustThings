@@ -70,7 +70,7 @@
     <div class="confetti"></div>
     <div class="invitation">
         <h1>Einladung zu meinem Geburtstag</h1>
-        <p>mein Geburtstag steht vor der Tür, und ich würde ihn gerne mit euch in geselliger Runde feiern.</p>  
+        <p id="personalGreeting">mein Geburtstag steht vor der Tür, und ich würde ihn gerne mit euch in geselliger Runde feiern.</p>  
         <p>Deshalb lade ich euch herzlich zu einem gemütlichen Abend ein.</p>  
         <br>
         <p><b>Wann?</b> Am 16.02.2025 ab 17 Uhr</p>  
@@ -79,7 +79,6 @@
         <br>
         <p>Ich freue mich, wenn ihr dabei seid.</p>  
         <p>Gebt mir bitte kurz Bescheid, ob ihr kommen könnt.</p>  
-
     </div>
 
     <script>
@@ -90,10 +89,21 @@
                 confetti.style.left = Math.random() * 100 + 'vw';
                 confetti.style.animationDelay = Math.random() * 3 + 's';
                 confetti.style.backgroundColor = `hsl(${Math.random() * 40 + 30}, 50%, 50%)`;
+                confetti.style.width = confetti.style.height = Math.random() * 15 + 5 + 'px';
                 confettiContainer.appendChild(confetti);
             }
         }
         createConfetti();
+        
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        const name = getQueryParam('name');
+        if (name) {
+            document.getElementById('personalGreeting').innerHTML = `Lieber ${name}, mein Geburtstag steht vor der Tür, und ich würde ihn gerne mit dir in geselliger Runde feiern.`;
+        }
     </script>
 </body>
 </html>
