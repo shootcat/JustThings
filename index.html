@@ -6,112 +6,180 @@
     <title>Prüfen und Generieren</title>
     <style>
         body {
-            background: black url('a.gif') center/cover no-repeat;
+            background-image: url('matrix.gif'); /* Matrix-Code als GIF */
+            background-color: black;
+            background-size: cover;
+            background-position: center;
             font-family: 'Courier New', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            color: white;
+            color: #00ff00;
             overflow: hidden;
         }
+
         .container {
             text-align: center;
-            background: rgba(134, 139, 143, 0.8);
+            background: rgba(0, 0, 0, 0.8);
             padding: 30px;
             border-radius: 15px;
-            box-shadow: 0 0 20px rgba(237, 237, 237, 0.2);
+            box-shadow: 0 0 20px 5px rgba(0, 255, 0, 0.5);
             width: 90%;
             max-width: 400px;
         }
-        h1 { color: #e3e3e3; }
+
+        h1 {
+            font-size: 24px;
+            color: #00ff00;
+            margin-bottom: 20px;
+        }
+
         input[type="text"] {
             padding: 12px;
             width: 80%;
             border-radius: 20px;
-            border: 2px solid #e3e3e3;
+            border: 2px solid #00ff00;
             margin-bottom: 20px;
             font-size: 16px;
             background: black;
-            color: #e3e3e3;
+            color: #00ff00;
             text-align: center;
-            box-shadow: 0 0 10px rgba(242, 242, 242, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
         }
+
+        input[type="text"]::placeholder {
+            color: #00aa00;
+            font-style: italic;
+        }
+
         button {
             padding: 12px 25px;
-            background-color: #e3e3e3;
+            background-color: #00ff00;
             color: black;
             border: none;
             border-radius: 20px;
             font-size: 16px;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(242, 242, 242, 0.7);
-            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            transition: all 0.3s ease;
         }
-        button:hover { box-shadow: 0 0 20px rgba(242, 242, 242, 1); }
-        .next-button { display: none; margin-top: 20px; }
-        .loading { display: none; margin-top: 20px; }
-        .error-message { display: none; color: #ff6666; font-size: 14px; margin-top: 10px; font-weight: bold; }
+
+        button:hover {
+            background-color: #00aa00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 1);
+        }
+
+        .next-button {
+            display: none;
+            margin: 20px auto 0;
+            background-color: #00ff00;
+            color: black;
+            font-size: 18px;
+            padding: 15px 30px;
+            border-radius: 30px;
+            text-align: center;
+        }
+
+        .next-button:hover {
+            background-color: #00aa00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.8);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading img {
+            width: 80px;
+            height: 80px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .loading p {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #00ff00;
+        }
+
+        .error-message {
+            display: none;
+            color: #ff0000;
+            font-size: 14px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Einladung Generieren</h1>
-        <input type="text" id="nameInput" placeholder="Gib deinen Namen ein">
-        <button onclick="checkName()">Prüfen und Generieren</button>
-        <div class="error-message" id="errorMessage">Leider keine Übereinstimmung.</div>
-        <div class="loading" id="loading">
-            <img src="b.gif" alt="Ladeanimation" width="80" height="80">
-            <p id="loadingText">Lade Daten...</p>
-        </div>
-        <button class="next-button" id="nextButton">Weiter</button>
+
+<div class="container">
+    <h1>Einladung Generieren</h1>
+    <input type="text" id="nameInput" placeholder="Gib deinen Namen ein">
+    <button onclick="checkName()">Prüfen und Generieren</button>
+    <div class="error-message" id="errorMessage">Leider keine Übereinstimmung.</div>
+
+    <div class="loading" id="loading">
+        <img src="loading.gif" alt="Ladeanimation">
+        <p id="loadingText">Lade Daten...</p>
     </div>
-    
-    <script>
-        let namesList = [];
-        async function loadNames() {
-            try {
-                const response = await fetch('name.txt');
-                const text = await response.text();
-                namesList = text.split('\n').map(name => name.trim().toLowerCase());
-            } catch (error) {
-                console.error('Fehler beim Laden der Datei:', error);
-            }
+
+    <button class="next-button" id="nextButton" onclick="redirectUser()">Weiter</button>
+</div>
+
+<script>
+    let validNames = [];
+
+    async function loadNames() {
+        try {
+            const response = await fetch('name.txt');
+            const text = await response.text();
+            validNames = text.split('\n').map(name => name.trim().toLowerCase());
+        } catch (error) {
+            console.error('Fehler beim Laden der Namen:', error);
         }
-        loadNames();
+    }
+    loadNames();
+
+    async function checkName() {
+        const nameInput = document.getElementById('nameInput').value.trim().toLowerCase();
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const nextButton = document.getElementById('nextButton');
+
+        errorMessage.style.display = 'none';
         
-        async function checkName() {
-            const nameInput = document.getElementById('nameInput').value.trim().toLowerCase();
-            const errorMessage = document.getElementById('errorMessage');
-            const loading = document.getElementById('loading');
-            const nextButton = document.getElementById('nextButton');
-            
-            errorMessage.style.display = 'none';
-            if (!namesList.includes(nameInput)) {
-                errorMessage.style.display = 'block';
-                return;
-            }
-            
+        if (validNames.includes(nameInput)) {
             document.querySelector('button').style.display = 'none';
             loading.style.display = 'block';
-            let messages = ["Verbinde mit Datenbank...", "Lese Dateien...", "Überprüfe Eingabe...", "Initialisiere Einladung...", "Bereite Dokumente vor...", "Einladung wird geladen..."];
-            let count = 0;
-            
-            const interval = setInterval(() => {
-                document.getElementById('loadingText').innerText = messages[count];
-                count = (count + 1) % messages.length;
-            }, 2000);
             
             setTimeout(() => {
-                clearInterval(interval);
                 loading.style.display = 'none';
                 nextButton.style.display = 'block';
-                nextButton.onclick = () => {
-                    window.location.href = (nameInput === "kim") ? 'zukunft.html' : 'bde.html';
-                };
-            }, 10000);
+                nextButton.dataset.name = nameInput;
+            }, 5000);
+        } else {
+            errorMessage.style.display = 'block';
         }
-    </script>
+    }
+
+    function redirectUser() {
+        const name = document.getElementById('nextButton').dataset.name;
+        if (name === 'kim') {
+            window.location.href = 'zukunft.html';
+        } else {
+            window.location.href = 'bde.html';
+        }
+    }
+</script>
+
 </body>
 </html>
