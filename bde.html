@@ -70,31 +70,18 @@
     <div class="confetti"></div>
     <div class="invitation">
         <h1>Einladung zu meinem Geburtstag</h1>
-        <p id="personalGreeting">mein Geburtstag steht vor der Tür, und ich würde ihn gerne mit euch in geselliger Runde feiern.</p>  
-        <p>Deshalb lade ich euch herzlich zu einem gemütlichen Abend ein.</p>  
+        <p id="personalGreeting">Mein Geburtstag steht vor der Tür, und ich würde ihn gerne mit dir in geselliger Runde feiern.</p>  
+        <p>Deshalb lade ich dich herzlich zu einem gemütlichen Abend ein.</p>  
         <br>
         <p><b>Wann?</b> Am 16.02.2025 ab 17 Uhr</p>  
         <p><b>Wo?</b> Dinkelbergstraße 9, 79664 Wehr</p>  
         <p><b>Was gibt’s?</b> Köstliches Käsefondue und eine schöne Zeit zusammen</p>  
         <br>
-        <p>Ich freue mich, wenn ihr dabei seid.</p>  
-        <p>Gebt mir bitte kurz Bescheid, ob ihr kommen könnt.</p>  
+        <p>Ich freue mich, wenn du dabei bist.</p>  
+        <p>Gebt mir bitte kurz Bescheid, ob du kommen kannst.</p>  
     </div>
 
     <script>
-        function createConfetti() {
-            const confettiContainer = document.querySelector('.confetti');
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('span');
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.animationDelay = Math.random() * 3 + 's';
-                confetti.style.backgroundColor = `hsl(${Math.random() * 40 + 30}, 50%, 50%)`;
-                confetti.style.width = confetti.style.height = Math.random() * 15 + 5 + 'px';
-                confettiContainer.appendChild(confetti);
-            }
-        }
-        createConfetti();
-        
         function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
