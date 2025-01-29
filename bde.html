@@ -16,26 +16,41 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            overflow: auto;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
+        
         .invitation {
-            background: rgba(255, 248, 240, 0.8);
-            padding: 30px;
+            background: rgba(255, 248, 240, 0.9);
+            padding: 5vh 20px;
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            max-width: 90%;
-            margin: 20px;
+            max-width: 600px;
+            width: 90%;
         }
+
         h1 {
-            font-size: 2.8em;
+            font-size: 2.4em;
             margin-bottom: 0.5em;
             font-weight: bold;
         }
+
         p {
-            font-size: 1.4em;
+            font-size: 1.2em;
             margin: 0.7em 0;
         }
+
+        /* Konfetti-Animation */
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
         .confetti span {
             position: absolute;
             width: 10px;
@@ -44,6 +59,7 @@
             border-radius: 50%;
             animation: confetti 3s linear infinite;
         }
+
         @keyframes confetti {
             0% { transform: translateY(100vh) scale(0.5); opacity: 1; }
             100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
@@ -61,8 +77,8 @@
         <p><strong>Örtlichkeit:</strong> <br>Dinkelbergstraße 9, 79664 Wehr</p>
         <p><strong>Speis & Trank:</strong> Ein delikates Käsefondue wird gereicht</p>
         <p>Es wäre mir eine große Ehre, Euch an diesem festlichen Abend willkommen zu heißen. Ich bitte um eine kurze Rückmeldung, ob Euer Kommen gewiss ist.</p>
-        
     </div>
+
     <script>
         function createConfetti() {
             const confettiContainer = document.querySelector('.confetti');
