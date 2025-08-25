@@ -287,12 +287,50 @@
         onAuthStateChanged(fb.auth, () => { updateUIDOutput(); });
         state.usingCloud = true;
         qs('#syncInfo').textContent = 'Cloud Sync aktiv. Daten werden geteilt';
+        subscribeSettings();
         subscribeCloud();
       } catch (e) {
         console.error(e);
         state.usingCloud = false;
         qs('#syncInfo').textContent = 'Cloud konnte nicht gestartet werden. Es wird lokal gespeichert';
       }
+    }
+
+    async function subscribeSettings() {
+      if (!state.usingCloud) return;
+      const { doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      const ref = doc(fb.db, 'settings', 'config');
+      onSnapshot(ref, snap => {
+        if (!snap.exists()) return;
+        const cfg = snap.data();
+        let changed = false;
+        if (Array.isArray(cfg.days) && JSON.stringify(cfg.days) !== JSON.stringify(state.days)) {
+          state.days = cfg.days;
+          state.mobileDayIndex = 0;
+          changed = true;
+        }
+        if (Number.isInteger(cfg.hourStart) && cfg.hourStart !== state.hourStart) { state.hourStart = cfg.hourStart; changed = true; }
+        if (Number.isInteger(cfg.hourEnd) && cfg.hourEnd !== state.hourEnd) { state.hourEnd = cfg.hourEnd; changed = true; }
+        if (changed) {
+          saveLocal();
+          updateDaysUI();
+          subscribeCloud();
+        }
+      });
+    }
+
+    async function syncSettings(){
+      if (!state.usingCloud) return;
+      try {
+        const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        await setDoc(doc(fb.db, 'settings', 'config'), {
+          days: state.days,
+          hourStart: state.hourStart,
+          hourEnd: state.hourEnd,
+          updatedAt: new Date(),
+          updatedBy: fb.auth?.currentUser?.uid || null
+        }, { merge: true });
+      } catch(e) { console.error('Settings write failed', e); }
     }
 
     async function subscribeCloud() {
@@ -337,8 +375,8 @@
       qs('#hourStart').value = state.hourStart;
       qs('#hourEnd').value = state.hourEnd;
 
-      qs('#hourStart').addEventListener('change', e => { state.hourStart = clampHour(Number(e.target.value)); saveLocal(); renderAll(); });
-      qs('#hourEnd').addEventListener('change', e => { state.hourEnd = clampHour(Number(e.target.value)); saveLocal(); renderAll(); });
+      qs('#hourStart').addEventListener('change', e => { state.hourStart = clampHour(Number(e.target.value)); saveLocal(); syncSettings(); renderAll(); });
+      qs('#hourEnd').addEventListener('change', e => { state.hourEnd = clampHour(Number(e.target.value)); saveLocal(); syncSettings(); renderAll(); });
 
       qs('#btnShare').addEventListener('click', () => {
         if (state.days.length !== 5) { alert('Tage noch nicht festgelegt'); return; }
@@ -430,13 +468,13 @@
       qs('#dlgDays').showModal();
     }
 
-    function saveDaysFromDialog() {
+    async function saveDaysFromDialog() {
       const ids = ['d1','d2','d3','d4','d5'];
       const arr = ids.map(id => qs('#'+id).value).filter(Boolean);
       if (arr.length !== 5) { alert('Bitte genau fünf Tage wählen'); return; }
       const set = new Set(arr);
       if (set.size !== 5) { alert('Tage dürfen sich nicht wiederholen'); return; }
-      state.days = arr; state.mobileDayIndex = 0; saveLocal(); subscribeCloud(); updateDaysUI(); qs('#dlgDays').close();
+      state.days = arr; state.mobileDayIndex = 0; saveLocal(); await syncSettings(); subscribeCloud(); updateDaysUI(); qs('#dlgDays').close();
     }
 
     function updateUIDOutput() {
