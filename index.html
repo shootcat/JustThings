@@ -1,147 +1,685 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Futuristische Verifizierung</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Malia Besuchsplaner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="color-scheme" content="light" />
   <style>
-    body {
-      /* Das animierte GIF wird als Hintergrundbild verwendet */
-      background: url('https://i.gifer.com/7RRt.gif') no-repeat center center fixed;
-      background-size: cover;
-      color: #e0e0e0;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-      text-align: center;
-      width: 300px;
-    }
-    h1 {
-      color: #00ffcc;
-      margin-bottom: 20px;
-    }
-    p {
-      margin: 10px 0;
-    }
-    input[type="text"] {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid #00ffcc;
-      color: #e0e0e0;
-      font-size: 1rem;
-      padding: 10px;
-      border-radius: 4px;
-      width: 90%;
-      margin-top: 10px;
-    }
-    button {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid #00ffcc;
-      color: #e0e0e0;
-      font-size: 1rem;
-      padding: 10px 20px;
-      margin-top: 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: rgba(0, 255, 204, 0.2);
-    }
-    .error {
-      color: #ff6666;
-      margin-top: 10px;
-      font-size: 0.9rem;
-      display: none;
-    }
-    .button-list {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0 0 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-    .button-list li {
-      flex: 1 0 40%;
-    }
-    .button-list li button {
-      width: 100%;
-    }
+    html, body { height: 100%; }
+    .slot { transition: transform .05s; }
+    .slot:active { transform: scale(.98); }
+    dialog::backdrop { background: rgba(0,0,0,.35); }
+    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
+    .pill { background: rgba(15,23,42,0.06); }
+    #swipeHint.show { opacity: 1; pointer-events: auto; }
+    /* Mobile Strip */
+    .snap-x { scroll-snap-type: x mandatory; }
+    .snap-start { scroll-snap-align: start; }
   </style>
+  <!--
+  Malia Besuchsplaner v4
+  Neu auf Mobil:
+  • Horizontales Scrollen durch die gewählten Tage per natürlicher Wischgeste.
+  • Vertikales Scrollen durch die Stunden pro Tag.
+  • Glas Design, große Touchflächen, klare Typo.
+  Papa legt weiterhin einmalig fünf Tage fest. Papa PIN 1597.
+  -->
 </head>
-<body>
-  <!-- Schritt 1: Geburtsdatum -->
-  <div class="container" id="step1">
-    <h1>Verifizierung</h1>
-    <p>Bitte geben Sie Ihr Geburtsdatum ein:</p>
-    <input type="text" id="birthdate" placeholder="DD.MM.YYYY">
-    <button onclick="checkBirthdate()">Weiter</button>
-    <p class="error" id="error1">Datum ist falsch</p>
+<body class="min-h-full bg-gradient-to-br from-fuchsia-50 via-sky-50 to-blue-50 text-slate-900">
+  <div class="max-w-6xl mx-auto p-4 md:p-6">
+    <!-- Header -->
+    <header class="mb-4 glass rounded-3xl shadow-lg border border-white/50">
+      <div class="p-4 md:p-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tight">Malia Besuchsplaner</h1>
+            <p id="syncInfo" class="text-sm text-slate-700 mt-1">Lokaler Modus aktiv</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btnLogin" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 shadow">Papa Login</button>
+            <button id="btnLogout" class="px-4 py-2 rounded-2xl bg-slate-200 text-slate-700 hover:bg-slate-300 shadow hidden">Logout</button>
+            <button id="btnShare" class="px-4 py-2 rounded-2xl bg-sky-600 text-white hover:bg-sky-700 shadow">Link kopieren</button>
+          </div>
+        </div>
+
+        <!-- Status der fünf Tage -->
+        <div class="mt-4">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold">Geplante Tage</h2>
+            <div class="flex items-center gap-2">
+              <button id="btnDaysSetup" class="hidden px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Tage festlegen</button>
+              <button id="btnDaysEdit" class="hidden px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Tage bearbeiten</button>
+            </div>
+          </div>
+          <div id="daysPills" class="mt-2 flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Einstellungen nur für Papa -->
+        <details id="detailsSettings" class="mt-4 rounded-2xl overflow-hidden" open>
+          <summary class="cursor-pointer select-none px-4 py-3 text-sm font-medium pill rounded-2xl">Einstellungen</summary>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-4">
+            <label class="flex items-center gap-2">
+              <span class="w-36">Startstunde</span>
+              <input id="hourStart" type="number" min="0" max="23" class="px-3 py-2 rounded-xl border border-slate-300 w-full" />
+            </label>
+            <label class="flex items-center gap-2">
+              <span class="w-36">Endstunde</span>
+              <input id="hourEnd" type="number" min="1" max="24" class="px-3 py-2 rounded-xl border border-slate-300 w-full" />
+            </label>
+          </div>
+          <div id="adminBar" class="px-4 pb-4 hidden">
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Blocken</button>
+              <button id="btnUnblock" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
+              <button id="btnClearDay" class="px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Tag leeren</button>
+              <span id="adminBadge" class="ml-2 inline-flex items-center gap-1 text-sm text-slate-700">Admin aktiv<\/span> <span id="uidOut" class="ml-2 text-xs text-slate-500"></span>
+            </div>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <!-- Hinweis wenn Tage fehlen -->
+    <section id="setupNotice" class="glass rounded-3xl shadow-lg border border-white/50 p-6 mb-4 hidden">
+      <h3 class="text-lg font-semibold">Noch keine Tage festgelegt</h3>
+      <p class="text-slate-700 mt-1">Bitte Papa meldet sich an und legt fünf Tage fest</p>
+    </section>
+
+    <!-- Desktop Kalender -->
+    <section id="desktopCal" class="hidden md:block glass rounded-3xl shadow-lg border border-white/50 overflow-hidden">
+      <div id="calHeader" class="grid"></div>
+      <div id="calBody" class="grid"></div>
+    </section>
+
+    <!-- Mobile Kalender: horizontale Tag Streifen mit vertikalen Stundenlisten -->
+    <section id="mobileCal" class="md:hidden">
+      <div id="mobileStrip" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 -mx-4 px-1 py-1">
+        <!-- Day panes inserted here -->
+      </div>
+      <p class="text-center text-xs text-slate-600 mt-2">Wische seitlich durch die Tage. Scrolle im Tag nach unten für die Stunden</p>
+    </section>
+
+    <footer class="mt-6 text-xs text-slate-600 text-center">
+      <p>Alles Gute für Malia und die Eltern</p>
+    </footer>
   </div>
 
-  <!-- Schritt 2: Lieblingsschwester -->
-  <div class="container" id="step2" style="display: none;">
-    <h1>Verifizierung</h1>
-    <p>Name der Lieblingsschwester:</p>
-    <input type="text" id="favSister" placeholder="z.B. Kaulquappe">
-    <button onclick="checkSister()">Weiter</button>
-    <p class="error" id="error2">Name ist falsch</p>
-  </div>
+  <!-- Buchungsdialog -->
+  <dialog id="dlgBook" class="rounded-2xl p-0 w-full max-w-md">
+    <div class="p-4 border-b bg-slate-50 rounded-t-2xl">
+      <h2 class="font-semibold">Slot buchen</h2>
+      <p id="dlgBookWhen" class="text-sm text-slate-600"></p>
+    </div>
+    <div class="p-4 space-y-3">
+      <label class="block">
+        <span class="text-sm">Name</span>
+        <input id="inName" required class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Dein Name" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Kontakt optional</span>
+        <input id="inContact" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Telefon oder E Mail" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Dauer</span>
+        <select id="inDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300">
+          <option value="1">1 Stunde</option>
+          <option value="2">2 Stunden</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-sm">Notiz optional</span>
+        <textarea id="inNote" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" rows="2" placeholder="Kurze Notiz"></textarea>
+      </label>
+    </div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBooking">Abbrechen</button>
+      <button type="button" id="btnConfirmBooking" class="px-3 py-2 rounded-xl bg-indigo-600 text-white">Buchen</button>
+    </div>
+  </dialog>
 
-  <!-- Schritt 3: Captcha - Lieblingshund -->
-  <div class="container" id="step3" style="display: none;">
-    <h1>Captcha</h1>
-    <p>Klicke den Namen des Lieblingshundes:</p>
-    <ul class="button-list">
-      <li><button onclick="checkDog('Bello')">Bello</button></li>
-      <li><button onclick="checkDog('Lilo')">Lilo</button></li>
-      <li><button onclick="checkDog('Max')">Max</button></li>
-      <li><button onclick="checkDog('Rocky')">Rocky</button></li>
-    </ul>
-    <p class="error" id="error3">Captcha: Falsche Auswahl</p>
+  <!-- Blockdialog -->
+  <dialog id="dlgBlock" class="rounded-2xl p-0 w-full max-w-md">
+    <div class="p-4 border-b bg-slate-50 rounded-t-2xl">
+      <h2 class="font-semibold">Zeitraum blocken</h2>
+      <p id="dlgBlockWhen" class="text-sm text-slate-600"></p>
+    </div>
+    <div class="p-4 space-y-3">
+      <label class="block">
+        <span class="text-sm">Grund</span>
+        <input id="inBlockReason" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Arzt, Hebamme, Ruhezeit" />
+      </label>
+      <label class="block">
+        <span class="text-sm">Dauer</span>
+        <select id="inBlockDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300">
+          <option value="1">1 Stunde</option>
+          <option value="2">2 Stunden</option>
+        </select>
+      </label>
+    </div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBlock">Abbrechen</button>
+      <button type="button" id="btnConfirmBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white">Block setzen</button>
+    </div>
+  </dialog>
+
+  <!-- Login dialog -->
+  <dialog id="dlgLogin" class="rounded-2xl p-0 w-full max-w-sm">
+    <div class="p-4 border-b bg-slate-50 rounded-t-2xl">
+      <h2 class="font-semibold">Papa Login</h2>
+      <p class="text-sm text-slate-600">Nur für Verwaltung der Slots</p>
+    </div>
+    <div class="p-4 space-y-3">
+      <label class="block">
+        <span class="text-sm">PIN</span>
+        <input id="inPin" type="password" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="PIN eingeben" />
+      </label>
+    </div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelLogin">Abbrechen</button>
+      <button type="button" id="btnLoginConfirm" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button>
+    </div>
+  </dialog>
+
+  <!-- Tage Setup Dialog -->
+  <dialog id="dlgDays" class="rounded-2xl p-0 w-full max-w-lg">
+    <div class="p-4 border-b bg-slate-50 rounded-t-2xl">
+      <h2 class="font-semibold">Fünf Tage festlegen</h2>
+      <p class="text-sm text-slate-600">Bitte fünf einzelne Tage wählen</p>
+    </div>
+    <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <label class="block"><span class="text-sm">Tag 1</span><input id="d1" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+      <label class="block"><span class="text-sm">Tag 2</span><input id="d2" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+      <label class="block"><span class="text-sm">Tag 3</span><input id="d3" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+      <label class="block"><span class="text-sm">Tag 4</span><input id="d4" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+      <label class="block sm:col-span-2"><span class="text-sm">Tag 5</span><input id="d5" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+    </div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelDays">Abbrechen</button>
+      <button type="button" id="btnSaveDays" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Speichern</button>
+    </div>
+  </dialog>
+
+  <!-- Swipe Hint -->
+  <div id="swipeHint" class="fixed inset-x-0 bottom-4 flex justify-center opacity-0 pointer-events-none transition">
+    <div class="px-3 py-2 rounded-full bg-black/70 text-white text-xs">Wische seitlich durch die Tage</div>
   </div>
 
   <script>
-    function checkBirthdate() {
-      var input = document.getElementById("birthdate").value.trim();
-      if (input === "31.03.1995") {
-        document.getElementById("error1").style.display = "none";
-        document.getElementById("step1").style.display = "none";
-        document.getElementById("step2").style.display = "block";
-      } else {
-        document.getElementById("error1").style.display = "block";
+    // --------- Konfiguration ---------
+    const ADMIN_PIN = '1597';
+    const DEFAULT_HOUR_START = 9;
+    const DEFAULT_HOUR_END = 20; // exklusive Endstunde
+
+    // Firebase optional
+    const firebaseConfig = { 
+      apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+      authDomain: "geburt-ded5c.firebaseapp.com",
+      projectId: "geburt-ded5c",
+      storageBucket: "geburt-ded5c.firebasestorage.app",
+      messagingSenderId: "528584992005",
+      appId: "1:528584992005:web:14dea3f914a432e317c36c",
+      measurementId: "G-SX8G2KPVL8"
+    };
+
+    // --------- Utils ---------
+    const fmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    const pad2 = n => String(n).padStart(2,'0');
+    const hourLabel = h => pad2(h) + ':00';
+    const qs = s => document.querySelector(s);
+
+    function makeDateFromISO(iso) { const [y,m,da] = iso.split('-').map(Number); return new Date(y, m-1, da); }
+    function escapeHTML(s) { return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    // --------- State ---------
+    let state = {
+      admin: false,
+      hourStart: DEFAULT_HOUR_START,
+      hourEnd: DEFAULT_HOUR_END,
+      days: [],           // genau 5 ISO Tage
+      selected: null,     // {dateISO, hour}
+      bookings: {},       // {iso: [items]}
+      usingCloud: false,
+      mobileDayIndex: 0,
+    };
+
+    const LS_KEY_BOOK = 'malia_bookings_v4';
+    const LS_KEY_SETTINGS = 'malia_settings_v4';
+    const LS_KEY_DAYS = 'malia_days_v4';
+
+    function loadLocal() {
+      try {
+        const b = JSON.parse(localStorage.getItem(LS_KEY_BOOK) || '{}');
+        const s = JSON.parse(localStorage.getItem(LS_KEY_SETTINGS) || '{}');
+        const d = JSON.parse(localStorage.getItem(LS_KEY_DAYS) || '[]');
+        state.bookings = b;
+        if (s.hourStart != null) state.hourStart = s.hourStart;
+        if (s.hourEnd != null) state.hourEnd = s.hourEnd;
+        if (s.mobileDayIndex != null) state.mobileDayIndex = s.mobileDayIndex;
+        if (Array.isArray(d)) state.days = d;
+      } catch {}
+    }
+
+    function saveLocal() {
+      localStorage.setItem(LS_KEY_BOOK, JSON.stringify(state.bookings));
+      localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({ hourStart: state.hourStart, hourEnd: state.hourEnd, mobileDayIndex: state.mobileDayIndex }));
+      localStorage.setItem(LS_KEY_DAYS, JSON.stringify(state.days));
+    }
+
+    // --------- Firebase optional ---------
+    let fb = { app:null, db:null, auth:null, unsub:null };
+
+    async function initFirebaseIfConfigured() {
+      const ok = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
+      if (!ok) { state.usingCloud = false; qs('#syncInfo').textContent = 'Lokaler Modus aktiv. Daten bleiben auf diesem Gerät'; return; }
+      try {
+        const [{ initializeApp }, { getFirestore, collection, doc, onSnapshot, query, where, deleteDoc, addDoc }, { getAuth, signInAnonymously, onAuthStateChanged }] = await Promise.all([
+          import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
+        ]);
+        fb.app = initializeApp(firebaseConfig);
+        fb.db = getFirestore(fb.app);
+        fb.auth = getAuth(fb.app);
+        await signInAnonymously(fb.auth);
+        onAuthStateChanged(fb.auth, () => { updateUIDOutput(); });
+        state.usingCloud = true;
+        qs('#syncInfo').textContent = 'Cloud Sync aktiv. Daten werden geteilt';
+        subscribeCloud();
+      } catch (e) {
+        console.error(e);
+        state.usingCloud = false;
+        qs('#syncInfo').textContent = 'Cloud konnte nicht gestartet werden. Es wird lokal gespeichert';
       }
     }
 
-    function checkSister() {
-      var input = document.getElementById("favSister").value.trim();
-      if (input === "Kim") {
-        document.getElementById("error2").style.display = "none";
-        document.getElementById("step2").style.display = "none";
-        document.getElementById("step3").style.display = "block";
+    async function subscribeCloud() {
+      if (!state.usingCloud) return;
+      if (!state.days.length) return;
+      const { collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      const col = collection(fb.db, 'bookings');
+      const q = query(col, where('dateISO', 'in', state.days));
+      fb.unsub?.();
+      fb.unsub = onSnapshot(q, snap => {
+        state.days.forEach(iso => state.bookings[iso] = []);
+        snap.forEach(doc => {
+          const it = doc.data();
+          if (!state.days.includes(it.dateISO)) return;
+          state.bookings[it.dateISO] ??= [];
+          state.bookings[it.dateISO].push({ ...it, id: doc.id });
+        });
+        renderAll();
+        saveLocal();
+      });
+    }
+
+    async function cloudAdd(item) {
+      if (!state.usingCloud) { addLocal(item); return; }
+      const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      const col = collection(fb.db, 'bookings');
+      await addDoc(col, { ...item, createdAt: new Date(), createdBy: fb.auth?.currentUser?.uid || null });
+    }
+
+    async function cloudDelete(item) {
+      if (!state.usingCloud) { deleteLocal(item); return; }
+      const { doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      if (!item.id) return;
+      await deleteDoc(doc(fb.db, 'bookings', item.id));
+    }
+
+    function addLocal(item) { state.bookings[item.dateISO] ??= []; state.bookings[item.dateISO].push({ ...item, id: Math.random().toString(36).slice(2) }); saveLocal(); renderAll(); }
+    function deleteLocal(item) { const arr = state.bookings[item.dateISO] || []; const idx = arr.findIndex(x => x.id === item.id); if (idx >= 0) arr.splice(idx,1); saveLocal(); renderAll(); }
+
+    // --------- UI Init ---------
+    function initControls() {
+      qs('#hourStart').value = state.hourStart;
+      qs('#hourEnd').value = state.hourEnd;
+
+      qs('#hourStart').addEventListener('change', e => { state.hourStart = clampHour(Number(e.target.value)); saveLocal(); renderAll(); });
+      qs('#hourEnd').addEventListener('change', e => { state.hourEnd = clampHour(Number(e.target.value)); saveLocal(); renderAll(); });
+
+      qs('#btnShare').addEventListener('click', () => {
+        if (state.days.length !== 5) { alert('Tage noch nicht festgelegt'); return; }
+        const u = new URL(location.href);
+        u.searchParams.set('days', state.days.join(','));
+        navigator.clipboard?.writeText(u.toString());
+        alert('Link kopiert');
+      });
+
+      // Login
+      qs('#btnLogin').addEventListener('click', () => { qs('#inPin').value=''; qs('#dlgLogin').showModal(); });
+      qs('#btnCancelLogin').addEventListener('click', () => qs('#dlgLogin').close());
+      qs('#btnLoginConfirm').addEventListener('click', () => {
+        const pin = qs('#inPin').value.trim();
+        if (pin === ADMIN_PIN) { setAdmin(true); qs('#dlgLogin').close(); maybeOpenDaysSetup(); } else { alert('Falsche PIN'); }
+      });
+      qs('#btnLogout').addEventListener('click', () => setAdmin(false));
+
+      // Block Dialog
+      qs('#btnCancelBlock').addEventListener('click', () => { qs('#dlgBlock').close(); blockMode.active = false; });
+      qs('#btnConfirmBlock').addEventListener('click', onConfirmBlock);
+
+      // Buchungsdialog
+      qs('#btnCancelBooking').addEventListener('click', () => qs('#dlgBook').close());
+      qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
+
+      // Tage Dialog
+      qs('#btnDaysSetup').addEventListener('click', openDaysDialog);
+      qs('#btnDaysEdit').addEventListener('click', openDaysDialog);
+      qs('#btnCancelDays').addEventListener('click', () => qs('#dlgDays').close());
+      qs('#btnSaveDays').addEventListener('click', saveDaysFromDialog);
+
+      // URL übernehmen
+      const url = new URL(location.href);
+      const pDaysList = url.searchParams.get('days');
+      if (pDaysList) {
+        const arr = pDaysList.split(',').map(s => s.trim()).filter(Boolean);
+        if (arr.length === 5) { state.days = arr; saveLocal(); }
+      }
+
+      // Höhe der Stundenlisten setzen
+      window.addEventListener('resize', setMobileHoursHeights);
+      window.addEventListener('orientationchange', setMobileHoursHeights);
+
+      updateDaysUI();
+    }
+
+    function clampHour(h) { if (Number.isNaN(h)) return DEFAULT_HOUR_START; return Math.max(0, Math.min(24, h)); }
+
+    function setAdmin(on) {
+      state.admin = !!on;
+      qs('#adminBar').classList.toggle('hidden', !state.admin);
+      qs('#btnLogin').classList.toggle('hidden', state.admin);
+      qs('#btnLogout').classList.toggle('hidden', !state.admin);
+      const canEdit = state.admin;
+      qs('#btnDaysSetup').classList.toggle('hidden', !canEdit || state.days.length === 5);
+      qs('#btnDaysEdit').classList.toggle('hidden', !canEdit || state.days.length !== 5);
+      updateUIDOutput();
+      renderAll();
+    }
+
+    function maybeOpenDaysSetup() { if (state.days.length !== 5) openDaysDialog(); }
+
+    // --------- Tage UI ---------
+    function updateDaysUI() {
+      const pills = qs('#daysPills');
+      pills.innerHTML = '';
+      if (state.days.length === 0) {
+        qs('#setupNotice').classList.remove('hidden');
       } else {
-        document.getElementById("error2").style.display = "block";
+        qs('#setupNotice').classList.add('hidden');
+        state.days.forEach(iso => {
+          const d = makeDateFromISO(iso);
+          const el = document.createElement('span');
+          el.className = 'px-3 py-1 rounded-full text-sm pill';
+          el.textContent = fmt.format(d);
+          pills.appendChild(el);
+        });
+      }
+      qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length === 5);
+      qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length !== 5);
+      renderAll();
+    }
+
+    function openDaysDialog() {
+      const ids = ['d1','d2','d3','d4','d5'];
+      const vals = state.days.slice(0,5);
+      ids.forEach((id,i) => { qs('#'+id).value = vals[i] || ''; });
+      qs('#dlgDays').showModal();
+    }
+
+    function saveDaysFromDialog() {
+      const ids = ['d1','d2','d3','d4','d5'];
+      const arr = ids.map(id => qs('#'+id).value).filter(Boolean);
+      if (arr.length !== 5) { alert('Bitte genau fünf Tage wählen'); return; }
+      const set = new Set(arr);
+      if (set.size !== 5) { alert('Tage dürfen sich nicht wiederholen'); return; }
+      state.days = arr; state.mobileDayIndex = 0; saveLocal(); subscribeCloud(); updateDaysUI(); qs('#dlgDays').close();
+    }
+
+    function updateUIDOutput() {
+      const el = qs('#uidOut');
+      if (!el) return;
+      const uid = fb.auth?.currentUser?.uid || '';
+      el.textContent = state.admin && uid ? 'Firebase UID ' + uid : '';
+    }
+
+    // --------- Render ---------
+    function renderAll() { renderDesktop(); renderMobileStrip(); saveLocal(); }
+
+    function renderDesktop() {
+      const desktop = qs('#desktopCal');
+      const header = qs('#calHeader');
+      const body = qs('#calBody');
+      const show = window.matchMedia('(min-width: 768px)').matches && state.days.length === 5;
+      desktop.classList.toggle('hidden', !show);
+      if (!show) return;
+
+      header.style.gridTemplateColumns = `100px repeat(${state.days.length}, minmax(0, 1fr))`;
+      body.style.gridTemplateColumns = `100px repeat(${state.days.length}, minmax(0, 1fr))`;
+
+      header.innerHTML = `<div class="px-3 py-2 text-sm font-medium pill">Zeit</div>`;
+      state.days.forEach(iso => {
+        const d = makeDateFromISO(iso);
+        const el = document.createElement('div');
+        el.className = 'px-3 py-2 text-sm font-semibold pill';
+        el.textContent = fmt.format(d);
+        header.appendChild(el);
+      });
+
+      body.innerHTML = '';
+      for (let h = state.hourStart; h < state.hourEnd; h++) {
+        const z = document.createElement('div');
+        z.className = 'px-3 py-3 border-b border-white/40 text-sm text-slate-700';
+        z.textContent = hourLabel(h);
+        body.appendChild(z);
+        state.days.forEach(iso => {
+          const cell = document.createElement('button');
+          cell.className = 'slot w-full text-left px-3 py-2 border-b border-l border-white/40 hover:bg-white/50';
+          fillSlotCell(cell, iso, h);
+          body.appendChild(cell);
+        });
       }
     }
 
-    function checkDog(name) {
-      if (name === "Lilo") {
-        // Alle Prüfungen bestanden – Weiterleitung zur bdayx.html im selben Ordner
-        window.location.href = "bdayx.html";
-      } else {
-        document.getElementById("error3").style.display = "block";
+    function renderMobileStrip() {
+      const wrap = qs('#mobileCal');
+      const strip = qs('#mobileStrip');
+      const show = !window.matchMedia('(min-width: 768px)').matches && state.days.length === 5;
+      wrap.classList.toggle('hidden', !show);
+      if (!show) return;
+
+      strip.innerHTML = '';
+      state.days.forEach((iso, i) => {
+        const d = makeDateFromISO(iso);
+        const pane = document.createElement('div');
+        pane.className = 'dayPane snap-start shrink-0 w-full glass rounded-3xl shadow-lg border border-white/50 p-3';
+        pane.innerHTML = `<div class="flex items-center justify-between pb-2"><div class="font-semibold">${fmt.format(d)}</div></div><div class="hoursWrap"><ul class="hoursList divide-y divide-slate-200/60"></ul></div>`;
+        const list = pane.querySelector('.hoursList');
+        for (let h = state.hourStart; h < state.hourEnd; h++) {
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.className = 'slot w-full flex items-center justify-between px-4 py-3';
+          btn.dataset.date = iso; btn.dataset.hour = String(h);
+          btn.innerHTML = `<span class="text-sm text-slate-700">${hourLabel(h)}</span><span class="ml-3"></span>`;
+          fillSlotButtonMobile(btn, iso, h);
+          li.appendChild(btn);
+          list.appendChild(li);
+        }
+        strip.appendChild(pane);
+      });
+
+      // Nach Aufbau Höhe setzen und zum gespeicherten Index scrollen
+      setMobileHoursHeights();
+      const idx = Math.max(0, Math.min(state.days.length - 1, state.mobileDayIndex));
+      const panes = Array.from(strip.children);
+      if (panes[idx]) panes[idx].scrollIntoView({ behavior: 'instant', inline: 'start' });
+
+      // Beobachte welche Pane im Fokus ist, speichere Index
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          if (en.intersectionRatio >= 0.6) {
+            const i = panes.indexOf(en.target);
+            if (i >= 0) { state.mobileDayIndex = i; saveLocal(); }
+          }
+        });
+      }, { root: strip, threshold: [0.6] });
+      panes.forEach(p => obs.observe(p));
+    }
+
+    function setMobileHoursHeights() {
+      const header = document.querySelector('header');
+      const footer = document.querySelector('footer');
+      const reserve = (header?.offsetHeight || 0) + (footer?.offsetHeight || 0) + 80;
+      const h = Math.max(240, window.innerHeight - reserve);
+      document.querySelectorAll('.hoursWrap').forEach(el => { el.style.maxHeight = h + 'px'; el.style.overflowY = 'auto'; });
+    }
+
+    function fillSlotCell(cell, iso, hour) {
+      cell.dataset.date = iso; cell.dataset.hour = String(hour);
+      const info = slotInfo(iso, hour);
+      cell.replaceChildren();
+      if (info.kind === 'free') {
+        cell.innerHTML = `<div class="text-slate-800">Frei</div>`;
+        cell.addEventListener('click', () => onFreeClick(iso, hour), { once: true });
+      } else if (info.kind === 'visit') {
+        const it = info.item;
+        cell.classList.add('bg-emerald-50');
+        cell.innerHTML = `<div class="font-medium">Besuch: ${escapeHTML(it.name)}</div><div class="text-xs text-slate-600">${it.duration}h${it.note ? ' · ' + escapeHTML(it.note) : ''}</div>`;
+        if (state.admin) { cell.classList.add('hover:bg-emerald-100'); cell.addEventListener('click', () => { if (confirm('Buchung löschen')) cloudDelete(it); }, { once: true }); }
+      } else if (info.kind === 'block') {
+        const it = info.item;
+        cell.classList.add('bg-amber-50');
+        cell.innerHTML = `<div class="font-medium">Blockiert</div><div class="text-xs text-slate-600">${escapeHTML(it.note || 'Termin')}</div>`;
+        if (state.admin) { cell.classList.add('hover:bg-amber-100'); cell.addEventListener('click', () => { if (confirm('Block aufheben')) cloudDelete(it); }, { once: true }); }
       }
     }
+
+    function fillSlotButtonMobile(btn, iso, hour) {
+      const info = slotInfo(iso, hour);
+      const right = btn.querySelector('span:last-child');
+      btn.onclick = null;
+      if (info.kind === 'free') {
+        right.innerHTML = `<span class="inline-flex items-center gap-2 text-emerald-700"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Frei</span>`;
+        btn.addEventListener('click', () => onFreeClick(iso, hour));
+      } else if (info.kind === 'visit') {
+        const it = info.item;
+        right.innerHTML = `<span class="inline-flex items-center gap-2 text-emerald-800"><span class="w-2 h-2 rounded-full bg-emerald-600"></span>${escapeHTML(it.name)} · ${it.duration}h</span>`;
+        if (state.admin) btn.addEventListener('click', () => { if (confirm('Buchung löschen')) cloudDelete(it); });
+      } else if (info.kind === 'block') {
+        const it = info.item;
+        right.innerHTML = `<span class="inline-flex items-center gap-2 text-amber-800"><span class="w-2 h-2 rounded-full bg-amber-600"></span>Blockiert</span>`;
+        if (state.admin) btn.addEventListener('click', () => { if (confirm('Block aufheben')) cloudDelete(it); });
+      }
+    }
+
+    function slotInfo(dateISO, hour) {
+      const items = state.bookings[dateISO] || [];
+      const start = items.find(x => x.hour === hour && x.kind !== 'free');
+      if (start) return { kind: start.kind, item: start };
+      const prev = items.find(x => x.hour === hour - 1 && x.duration === 2);
+      if (prev) return { kind: prev.kind, item: prev };
+      return { kind: 'free' };
+    }
+
+    function isSlotFree(dateISO, hour) { const i = slotInfo(dateISO, hour); return i.kind === 'free'; }
+
+    function onFreeClick(dateISO, hour) {
+      state.selected = { dateISO, hour };
+      if (state.admin && blockMode.active) {
+        qs('#dlgBlockWhen').textContent = humanWhen(dateISO, hour);
+        qs('#inBlockReason').value = '';
+        qs('#inBlockDuration').value = '1';
+        qs('#dlgBlock').showModal();
+        return;
+      }
+      qs('#dlgBookWhen').textContent = humanWhen(dateISO, hour);
+      qs('#inName').value = '';
+      qs('#inContact').value = '';
+      qs('#inDuration').value = '1';
+      qs('#inNote').value = '';
+      qs('#dlgBook').showModal();
+    }
+
+    function humanWhen(dateISO, hour) { const d = makeDateFromISO(dateISO); return `${fmt.format(d)} · ${hourLabel(hour)}`; }
+
+    async function onConfirmBooking() {
+      const sel = state.selected; if (!sel) return;
+      const name = qs('#inName').value.trim();
+      const contact = qs('#inContact').value.trim();
+      const duration = Number(qs('#inDuration').value);
+      const note = qs('#inNote').value.trim();
+      if (!name) { alert('Bitte Name eintragen'); return; }
+      if (duration !== 1 && duration !== 2) { alert('Dauer ungültig'); return; }
+      if (!isSlotFree(sel.dateISO, sel.hour)) { alert('Slot ist nicht mehr frei'); return; }
+      if (duration === 2) {
+        if (sel.hour + 1 >= state.hourEnd) { alert('Zweite Stunde liegt außerhalb der Zeitspanne'); return; }
+        if (!isSlotFree(sel.dateISO, sel.hour + 1)) { alert('Die zweite Stunde ist belegt'); return; }
+      }
+      await cloudAdd({ kind: 'visit', name, contact, note, dateISO: sel.dateISO, hour: sel.hour, duration });
+      qs('#dlgBook').close();
+    }
+
+    // Blocken
+    const blockMode = { active: false };
+    function beginBlock(){ blockMode.active = true; alert('Klicke auf einen freien Slot zum Blocken'); }
+    function beginUnblock(){ blockMode.active = false; alert('Klicke auf einen Block zum Aufheben'); }
+    qs('#btnBlock').addEventListener('click', beginBlock);
+    qs('#btnUnblock').addEventListener('click', beginUnblock);
+
+    async function onConfirmBlock(){
+      const sel = state.selected; if (!sel) return;
+      const note = qs('#inBlockReason').value.trim() || 'Termin';
+      const duration = Number(qs('#inBlockDuration').value);
+      if (!isSlotFree(sel.dateISO, sel.hour)) { alert('Slot ist belegt'); return; }
+      if (duration === 2) {
+        if (sel.hour + 1 >= state.hourEnd) { alert('Zweite Stunde liegt außerhalb der Zeitspanne'); return; }
+        if (!isSlotFree(sel.dateISO, sel.hour + 1)) { alert('Die zweite Stunde ist belegt'); return; }
+      }
+      await cloudAdd({ kind: 'block', note, dateISO: sel.dateISO, hour: sel.hour, duration });
+      qs('#dlgBlock').close();
+      blockMode.active = false;
+    }
+
+    function clearCurrentDay() {
+      if (!state.days.length) return;
+      const dIdx = prompt('Welchen Tag leeren 1 bis ' + state.days.length + '?');
+      const idx = Number(dIdx) - 1;
+      if (Number.isNaN(idx) || idx < 0 || idx >= state.days.length) return;
+      const iso = state.days[idx];
+      const items = (state.bookings[iso] || []).slice();
+      if (!items.length) { alert('Keine Einträge'); return; }
+      if (!confirm('Alle Einträge dieses Tages löschen')) return;
+      items.forEach(it => cloudDelete(it));
+    }
+    qs('#btnClearDay').addEventListener('click', clearCurrentDay);
+
+    // --------- Start ---------
+    loadLocal();
+    initControls();
+    renderAll();
+    initFirebaseIfConfigured();
+    if (!state.days.length) qs('#setupNotice').classList.remove('hidden');
   </script>
+
+  <!--
+  Firestore Beispielregeln
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /bookings/{id} {
+        allow read: if true;
+        allow create: if request.auth != null &&
+          request.resource.data.kind in ['visit','block'] &&
+          request.resource.data.dateISO is string &&
+          request.resource.data.hour is int && request.resource.data.hour >= 0 && request.resource.data.hour <= 23 &&
+          request.resource.data.duration is int && request.resource.data.duration >= 1 && request.resource.data.duration <= 2;
+        allow delete: if request.auth != null;
+      }
+    }
+  }
+  -->
 </body>
 </html>
