@@ -15,6 +15,7 @@
     .pill { background: rgba(15,23,42,0.06); }
     #swipeHint.show { opacity: 1; pointer-events: auto; }
     body.modal-open { overflow: hidden; }
+    dialog { z-index: 50; }
     /* Mobile Strip */
     .snap-x { scroll-snap-type: x mandatory; }
     .snap-start { scroll-snap-align: start; }
@@ -79,6 +80,16 @@
             </div>
           </div>
         </details>
+        <!-- Inline Login Fallback -->
+        <div id="inlineLogin" class="mt-3 hidden">
+          <div class="glass rounded-2xl p-3 border border-white/50">
+            <div class="flex items-center gap-2">
+              <input id="inPinInline" type="password" class="px-3 py-2 rounded-xl border border-slate-300 w-full" placeholder="PIN 1597">
+              <button id="btnLoginInline" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button>
+              <button id="btnLoginInlineCancel" class="px-3 py-2 rounded-xl pill">Schließen</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -224,7 +235,33 @@
       measurementId: "G-SX8G2KPVL8"
     };
 
-    
+    // --------- Utils ---------
+    function openDialog(dlg){ if(!dlg) return; try{ dlg.showModal(); } catch(e){ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
+    function closeDialog(dlg){ if(!dlg) return; try{ dlg.close(); } catch(e){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
+    function doLogin(pin){ if(pin === ADMIN_PIN){ setAdmin(true); closeDialog(qs('#dlgLogin')); qs('#inlineLogin').classList.add('hidden'); maybeOpenDaysSetup(); } else { alert('Falsche PIN'); } }
+
+    // Dialog Polyfill für Mobile Browser ohne <dialog> Support
+    (function ensureDialogSupport(){
+      const test = document.createElement('dialog');
+      const supported = !!window.HTMLDialogElement && typeof test.showModal === 'function';
+      if (supported) return;
+      const methods = {
+        show(){ this.setAttribute('open',''); },
+        showModal(){ this.setAttribute('open',''); document.body.classList.add('modal-open'); },
+        close(){ this.removeAttribute('open'); document.body.classList.remove('modal-open'); }
+      };
+      document.querySelectorAll('dialog').forEach(d => Object.assign(d, methods));
+      new MutationObserver(() => {
+        document.querySelectorAll('dialog').forEach(d => { if (!('showModal' in d)) Object.assign(d, methods); });
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    })();
+
+    function setSync(msg, isError=false){
+      const el = document.querySelector('#syncInfo');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.color = isError ? '#b91c1c' : '';
+    }
     // Dialog Polyfill für Mobile Browser ohne <dialog> Support
     (function ensureDialogSupport(){
       const test = document.createElement('dialog');
@@ -296,7 +333,9 @@
 
     async function initFirebaseIfConfigured() {
       const ok = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
-      if (!ok) { state.usingCloud = false; setSync('Lokaler Modus aktiveApp }, { getFirestore, collection, doc, onSnapshot, query, where, deleteDoc, addDoc }, { getAuth, signInAnonymously, onAuthStateChanged }] = await Promise.all([
+      if (!ok) { state.usingCloud = false; setSync('Lokaler Modus aktiv. Daten bleiben auf diesem Gerät'); return; }
+      try {
+        const [{ initializeApp }, { getFirestore, collection, doc, onSnapshot, query, where, deleteDoc, addDoc }, { getAuth, signInAnonymously, onAuthStateChanged }] = await Promise.all([
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'),
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
@@ -305,15 +344,20 @@
         fb.db = getFirestore(fb.app);
         fb.auth = getAuth(fb.app);
         try { await signInAnonymously(fb.auth); }
-        catch(e){ console.error('Auth failed', e); setSync('Cloud Anmentication Anonymous Login', true); }
+        catch(e){ console.error('Auth failed', e); setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Authentication Anonymous Login', true); }
         onAuthStateChanged(fb.auth, () => { updateUIDOutput(); });
-     rden geteilt');
+        state.usingCloud = true;
+        setSync('Cloud Sync aktiv. Daten werden geteilt');
         subscribeSettings();
         subscribeCloud();
       } catch (e) {
         console.error(e);
         state.usingCloud = false;
-        setSync('Cloud konnte nicht gestartgs() {
+        setSync('Cloud konnte nicht gestartet werden. Es wird lokal gespeichert', true);
+      }
+    }
+
+    async function subscribeSettings() {
       if (!state.usingCloud) return;
       const { doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       const ref = doc(fb.db, 'settings', 'config');
@@ -410,20 +454,19 @@
       });
 
       // Login
-      qs('#btnLogin').addEventListener('click', () => { qs('#inPin').value=''; qs('#dlgLogin').showModal(); });
-      qs('#btnCancelLogin').addEventListener('click', () => qs('#dlgLogin').close());
-      qs('#btnLoginConfirm').addEventListener('click', () => {
-        const pin = qs('#inPin').value.trim();
-        if (pin === ADMIN_PIN) { setAdmin(true); qs('#dlgLogin').close(); maybeOpenDaysSetup(); } else { alert('Falsche PIN'); }
-      });
+      qs('#btnLogin').addEventListener('click', () => { qs('#inPin').value=''; const dlg = qs('#dlgLogin'); openDialog(dlg); setTimeout(()=>{ if (!dlg.hasAttribute('open')) qs('#inlineLogin').classList.remove('hidden'); }, 250); });
+      qs('#btnCancelLogin').addEventListener('click', () => { closeDialog(qs('#dlgLogin')); });
+      qs('#btnLoginConfirm').addEventListener('click', () => { doLogin(qs('#inPin').value.trim()); });
+      qs('#btnLoginInline').addEventListener('click', () => { doLogin(qs('#inPinInline').value.trim()); });
+      qs('#btnLoginInlineCancel').addEventListener('click', () => { qs('#inlineLogin').classList.add('hidden'); });
       qs('#btnLogout').addEventListener('click', () => setAdmin(false));
 
       // Block Dialog
-      qs('#btnCancelBlock').addEventListener('click', () => { qs('#dlgBlock').close(); blockMode.active = false; });
+      qs('#btnCancelBlock').addEventListener('click', () => { closeDialog(qs('#dlgBlock')); blockMode.active = false; });
       qs('#btnConfirmBlock').addEventListener('click', onConfirmBlock);
 
       // Buchungsdialog
-      qs('#btnCancelBooking').addEventListener('click', () => qs('#dlgBook').close());
+      qs('#btnCancelBooking').addEventListener('click', () => closeDialog(qs('#dlgBook')));
       qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
 
       // Tage Dialog
@@ -653,7 +696,7 @@
         qs('#dlgBlockWhen').textContent = humanWhen(dateISO, hour);
         qs('#inBlockReason').value = '';
         qs('#inBlockDuration').value = '1';
-        qs('#dlgBlock').showModal();
+        openDialog(qs('#dlgBlock'));
         return;
       }
       qs('#dlgBookWhen').textContent = humanWhen(dateISO, hour);
@@ -661,7 +704,7 @@
       qs('#inContact').value = '';
       qs('#inDuration').value = '1';
       qs('#inNote').value = '';
-      qs('#dlgBook').showModal();
+      openDialog(qs('#dlgBook'));
     }
 
     function humanWhen(dateISO, hour) { const d = makeDateFromISO(dateISO); return `${fmt.format(d)} · ${hourLabel(hour)}`; }
