@@ -14,6 +14,7 @@
     .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
     .pill { background: rgba(15,23,42,0.06); }
     #swipeHint.show { opacity: 1; pointer-events: auto; }
+    body.modal-open { overflow: hidden; }
     /* Mobile Strip */
     .snap-x { scroll-snap-type: x mandatory; }
     .snap-start { scroll-snap-align: start; }
@@ -223,7 +224,29 @@
       measurementId: "G-SX8G2KPVL8"
     };
 
-    // --------- Utils ---------
+    
+    // Dialog Polyfill für Mobile Browser ohne <dialog> Support
+    (function ensureDialogSupport(){
+      const test = document.createElement('dialog');
+      const supported = !!window.HTMLDialogElement && typeof test.showModal === 'function';
+      if (supported) return;
+      const methods = {
+        show(){ this.setAttribute('open',''); },
+        showModal(){ this.setAttribute('open',''); document.body.classList.add('modal-open'); },
+        close(){ this.removeAttribute('open'); document.body.classList.remove('modal-open'); }
+      };
+      document.querySelectorAll('dialog').forEach(d => Object.assign(d, methods));
+      new MutationObserver(() => {
+        document.querySelectorAll('dialog').forEach(d => { if (!('showModal' in d)) Object.assign(d, methods); });
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    })();
+
+    function setSync(msg, isError=false){
+      const el = document.querySelector('#syncInfo');
+      if (!el) return;
+      el.textContent = msg;
+      el.style.color = isError ? '#b91c1c' : '';
+    }
     const fmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
     const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     const pad2 = n => String(n).padStart(2,'0');
@@ -273,9 +296,7 @@
 
     async function initFirebaseIfConfigured() {
       const ok = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
-      if (!ok) { state.usingCloud = false; qs('#syncInfo').textContent = 'Lokaler Modus aktiv. Daten bleiben auf diesem Gerät'; return; }
-      try {
-        const [{ initializeApp }, { getFirestore, collection, doc, onSnapshot, query, where, deleteDoc, addDoc }, { getAuth, signInAnonymously, onAuthStateChanged }] = await Promise.all([
+      if (!ok) { state.usingCloud = false; setSync('Lokaler Modus aktiveApp }, { getFirestore, collection, doc, onSnapshot, query, where, deleteDoc, addDoc }, { getAuth, signInAnonymously, onAuthStateChanged }] = await Promise.all([
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'),
           import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
@@ -283,20 +304,16 @@
         fb.app = initializeApp(firebaseConfig);
         fb.db = getFirestore(fb.app);
         fb.auth = getAuth(fb.app);
-        await signInAnonymously(fb.auth);
+        try { await signInAnonymously(fb.auth); }
+        catch(e){ console.error('Auth failed', e); setSync('Cloud Anmentication Anonymous Login', true); }
         onAuthStateChanged(fb.auth, () => { updateUIDOutput(); });
-        state.usingCloud = true;
-        qs('#syncInfo').textContent = 'Cloud Sync aktiv. Daten werden geteilt';
+     rden geteilt');
         subscribeSettings();
         subscribeCloud();
       } catch (e) {
         console.error(e);
         state.usingCloud = false;
-        qs('#syncInfo').textContent = 'Cloud konnte nicht gestartet werden. Es wird lokal gespeichert';
-      }
-    }
-
-    async function subscribeSettings() {
+        setSync('Cloud konnte nicht gestartgs() {
       if (!state.usingCloud) return;
       const { doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       const ref = doc(fb.db, 'settings', 'config');
@@ -330,7 +347,7 @@
           updatedAt: new Date(),
           updatedBy: fb.auth?.currentUser?.uid || null
         }, { merge: true });
-      } catch(e) { console.error('Settings write failed', e); }
+      } catch(e){ console.error('Settings write failed', e); setSync('Cloud Einstellungen konnten nicht gespeichert werden. ' + (e.code || e.message), true); }
     }
 
     async function subscribeCloud() {
@@ -355,9 +372,15 @@
 
     async function cloudAdd(item) {
       if (!state.usingCloud) { addLocal(item); return; }
-      const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-      const col = collection(fb.db, 'bookings');
-      await addDoc(col, { ...item, createdAt: new Date(), createdBy: fb.auth?.currentUser?.uid || null });
+      try {
+        const { collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+        const col = collection(fb.db, 'bookings');
+        await addDoc(col, { ...item, createdAt: new Date(), createdBy: fb.auth?.currentUser?.uid || null });
+      } catch(e) {
+        console.error('Cloud add failed', e);
+        setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. ' + (e.code || e.message), true);
+        addLocal(item);
+      }
     }
 
     async function cloudDelete(item) {
