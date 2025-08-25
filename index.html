@@ -238,7 +238,18 @@
     // --------- Utils ---------
     function openDialog(dlg){ if(!dlg) return; try{ dlg.showModal(); } catch(e){ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
     function closeDialog(dlg){ if(!dlg) return; try{ dlg.close(); } catch(e){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
-    function doLogin(pin){ if(pin === ADMIN_PIN){ setAdmin(true); closeDialog(qs('#dlgLogin')); qs('#inlineLogin').classList.add('hidden'); maybeOpenDaysSetup(); } else { alert('Falsche PIN'); } }
+    function doLogin(pin){
+      if(pin === ADMIN_PIN){
+        setAdmin(true);
+        closeDialog(qs('#dlgLogin'));
+        qs('#inlineLogin').classList.add('hidden');
+        maybeOpenDaysSetup();
+        subscribeSettings();
+        if(state.days.length === 5){ syncSettings(); }
+      } else {
+        alert('Falsche PIN');
+      }
+    } else { alert('Falsche PIN'); } }
 
     // Dialog Polyfill für Mobile Browser ohne <dialog> Support
     (function ensureDialogSupport(){
@@ -343,13 +354,18 @@
         fb.app = initializeApp(firebaseConfig);
         fb.db = getFirestore(fb.app);
         fb.auth = getAuth(fb.app);
-        try { await signInAnonymously(fb.auth); }
+        let authed = false;
+        try { await signInAnonymously(fb.auth); authed = true; }
         catch(e){ console.error('Auth failed', e); setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Authentication Anonymous Login', true); }
         onAuthStateChanged(fb.auth, () => { updateUIDOutput(); });
-        state.usingCloud = true;
-        setSync('Cloud Sync aktiv. Daten werden geteilt');
-        subscribeSettings();
-        subscribeCloud();
+        if (authed) {
+          state.usingCloud = true;
+          setSync('Cloud Sync aktiv. Daten werden geteilt');
+          subscribeSettings();
+          subscribeCloud();
+        } else {
+          state.usingCloud = false;
+        }
       } catch (e) {
         console.error(e);
         state.usingCloud = false;
