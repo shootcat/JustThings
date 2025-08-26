@@ -37,25 +37,43 @@
     .pill { background: rgba(15,23,42,.06); }
     .slot { transition: transform .05s; }
     .slot:active { transform: scale(.98); }
-    .tab-active { background: rgba(255,255,255,.9); }
-    /* Toast */
-    #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(60px);
-      background: linear-gradient(135deg, #2dd07f, #40e594); color: #0b3b2e; padding: 12px 16px; border-radius: 12px;
-      font-weight: 700; box-shadow: 0 12px 28px rgba(0,0,0,.18); opacity: 0; pointer-events: none; z-index: 80;
-      transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .25s;
+    .no-scrollbar::-webkit-scrollbar{ display:none; }
+    .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+    /* Mittiger Danke Hinweis */
+    #centerToast {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -40%) scale(.98);
+      opacity: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,240,246,.95));
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 20px;
+      padding: 18px 22px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      box-shadow: 0 20px 60px rgba(255,122,162,.35), 0 8px 24px rgba(0,0,0,.18);
+      z-index: 90;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
     }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #centerToast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
     /* Feuerwerk */
     #fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
   </style>
 </head>
 <body class="min-h-full bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 text-slate-900">
 
-  <!-- App Header mit Tageswahl -->
+  <!-- Kopf mit Tageswahl -->
   <header class="sticky top-0 z-40 border-b border-white/60 glass">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl shadow-inner flex items-center justify-center text-lg"
+        <div class="h-10 w-10 rounded-2xl flex items-center justify-center text-lg"
              style="background: linear-gradient(135deg,#ffd6e7,#ffc3da); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 8px 24px rgba(255,122,162,.28);">💗</div>
         <div>
           <h1 class="m-0 text-xl font-extrabold tracking-tight">Malia Kalender</h1>
@@ -63,77 +81,54 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button id="btnLogin" class="px-3 py-2 rounded-xl bg-pink-600 text-white shadow hover:bg-pink-700">Papa Login</button>
-        <button id="btnLogout" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-800 shadow hover:bg-slate-300 hidden">Logout</button>
+        <button id="btnShare" class="px-3 py-1.5 rounded-xl text-sm bg-rose-500 text-white hover:bg-rose-600">Link kopieren</button>
+        <button id="btnLogin" class="px-3 py-1.5 rounded-xl text-sm bg-pink-600 text-white hover:bg-pink-700">Admin Bereich</button>
+        <button id="btnLogout" class="px-3 py-1.5 rounded-xl text-sm bg-slate-200 text-slate-800 hover:bg-slate-300 hidden">Logout</button>
       </div>
     </div>
 
-    <!-- Tagesauswahl als Pilleiste -->
+    <!-- Tagespills -->
     <div class="max-w-3xl mx-auto px-3 pb-3">
       <div id="dayStrip" class="flex overflow-x-auto gap-2 no-scrollbar">
-        <!-- Pills werden per JS gesetzt -->
+        <!-- Pills per JS -->
+      </div>
+    </div>
+
+    <!-- Admin Panel nur sichtbar wenn angemeldet -->
+    <div id="adminPanel" class="max-w-3xl mx-auto px-3 pb-3 hidden">
+      <div class="glass rounded-2xl border border-white/60 shadow-lg p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnDaysSetup" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 hidden">Tage festlegen</button>
+          <button id="btnDaysEdit" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 hidden">Tage bearbeiten</button>
+          <span class="hidden sm:inline text-sm text-slate-700">Zeiten</span>
+          <input id="hourStart" type="number" min="0" max="23" class="px-3 py-1.5 rounded-xl border border-slate-300 w-20" />
+          <input id="hourEnd" type="number" min="1" max="24" class="px-3 py-1.5 rounded-xl border border-slate-300 w-20" />
+          <button id="btnBlock" class="px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Block setzen</button>
+          <button id="btnUnblock" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
+          <button id="btnClearDay" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Tag leeren</button>
+          <span id="uidOut" class="text-xs text-slate-500 ml-1">keine UID</span>
+          <button id="btnCopyUID" class="px-2 py-1 text-xs rounded-lg bg-slate-200 hover:bg-slate-300 hidden">UID kopieren</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- Inhaltstabs -->
-  <main class="max-w-3xl mx-auto px-3 pb-24 pt-3">
-    <!-- Tab Plan -->
-    <section id="tab-plan">
-      <ul id="timeline" class="space-y-3">
-        <!-- Slots per JS -->
-      </ul>
-      <p id="emptyMsg" class="mt-6 text-center text-sm text-slate-600 hidden">Noch keine Tage gewählt</p>
-    </section>
+  <!-- Hinweis wenn Tage fehlen -->
+  <section id="setupNotice" class="max-w-3xl mx-auto glass rounded-2xl border border-white/60 shadow p-4 mt-3 hidden">
+    <p class="text-sm text-slate-700">Bitte Admin legt fünf Tage fest</p>
+  </section>
 
-    <!-- Tab Tage -->
-    <section id="tab-days" class="hidden">
-      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4">
-        <h2 class="text-lg font-semibold">Tage verwalten</h2>
-        <p class="text-sm text-slate-700 mt-1">Fünf einzelne Tage festlegen. Link für Familie teilen</p>
-        <div class="mt-3 flex flex-wrap gap-2" id="daysPills"></div>
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <button id="btnDaysSetup" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 hidden">Tage festlegen</button>
-          <button id="btnDaysEdit" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 hidden">Tage bearbeiten</button>
-          <button id="btnShare" class="px-3 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600">Link kopieren</button>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4 mt-4">
-        <h3 class="text-base font-semibold">Zeiten</h3>
-        <div class="grid grid-cols-2 gap-3 mt-2">
-          <label class="flex items-center gap-2"><span class="w-28">Start</span><input id="hourStart" type="number" min="0" max="23" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
-          <label class="flex items-center gap-2"><span class="w-28">Ende</span><input id="hourEnd" type="number" min="1" max="24" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
-        </div>
-        <p class="text-xs text-slate-600 mt-2">Zeitrahmen für den Tagesplan</p>
-      </div>
-    </section>
-
-    <!-- Tab Admin -->
-    <section id="tab-admin" class="hidden">
-      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4">
-        <h2 class="text-lg font-semibold">Admin</h2>
-        <p class="text-sm text-slate-700 mt-1">Einträge verwalten</p>
-        <div class="mt-3 flex flex-wrap items-center gap-2">
-          <button id="btnBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Block setzen</button>
-          <button id="btnUnblock" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
-          <button id="btnClearDay" class="px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Ausgewählten Tag leeren</button>
-          <span id="uidOut" class="text-xs text-slate-500 ml-1">keine UID</span>
-          <button id="btnCopyUID" class="px-2 py-1 text-xs rounded-lg bg-slate-200 hover:bg-slate-300 hidden">UID kopieren</button>
-        </div>
-        <p class="text-xs text-slate-600 mt-3">Wähle oben einen Tag. Klicke unten auf freie Slots zum Blocken oder in Einträge zum Löschen</p>
-      </div>
-    </section>
+  <!-- Inhalt -->
+  <main id="appMain" class="max-w-3xl mx-auto px-3 pb-12 pt-3 select-none">
+    <ul id="timeline" class="space-y-3">
+      <!-- Slots per JS -->
+    </ul>
+    <p id="emptyMsg" class="mt-6 text-center text-sm text-slate-600 hidden">Noch keine Tage gewählt</p>
   </main>
 
-  <!-- Tab Leiste unten -->
-  <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 px-2 py-2 glass rounded-2xl border border-white/60 shadow-xl">
-    <div class="grid grid-cols-3 gap-2 w-[min(96vw,640px)]">
-      <button class="tab-btn tab-active px-3 py-2 rounded-xl text-sm font-semibold" data-tab="plan">Plan</button>
-      <button class="tab-btn px-3 py-2 rounded-xl text-sm font-semibold" data-tab="days">Tage</button>
-      <button class="tab-btn px-3 py-2 rounded-xl text-sm font-semibold" data-tab="admin">Admin</button>
-    </div>
-  </nav>
+  <!-- Mittiger Danke Hinweis und Feuerwerk -->
+  <div id="centerToast">Danke für deinen Eintrag</div>
+  <canvas id="fx"></canvas>
 
   <!-- Dialoge -->
   <dialog id="dlgBook" class="rounded-2xl p-0 w-full max-w-md">
@@ -178,7 +173,7 @@
 
   <dialog id="dlgLogin" class="rounded-2xl p-0 w-full max-w-sm">
     <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
-      <h2 class="font-semibold">Papa Login</h2>
+      <h2 class="font-semibold">Admin Bereich</h2>
       <p class="text-sm text-slate-600">Nur für Verwaltung</p>
     </div>
     <div class="p-4 space-y-3">
@@ -190,11 +185,7 @@
     </div>
   </dialog>
 
-  <!-- Toast und Feuerwerk -->
-  <div id="toast">Danke für deinen Eintrag</div>
-  <canvas id="fx"></canvas>
-
-  <!-- Tage Dialog separat, damit closeDialog funktioniert -->
+  <!-- Tage Dialog separat -->
   <dialog id="dlgDays" class="rounded-2xl p-0 w-full max-w-lg">
     <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
       <h2 class="font-semibold">Fünf Tage festlegen</h2>
@@ -213,7 +204,6 @@
     </div>
   </dialog>
 
-  <!-- App Script -->
   <script>
     // Konfiguration
     const ADMIN_PIN = '1597';
@@ -226,14 +216,14 @@
     const pad2 = n => String(n).padStart(2,'0');
     const hourLabel = h => pad2(h) + ':00';
     const clampHour = h => Number.isNaN(h) ? DEFAULT_HOUR_START : Math.max(0, Math.min(24, h));
-    const makeDateFromISO = iso => { const [y,m,d]=iso.split('-').map(Number); return new Date(y, m-1, d); };
+    const makeDateFromISO = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); };
     const escapeHTML = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));
 
-    function setSync(msg, err=false){ const el=qs('#syncInfo'); if(!el)return; el.textContent=msg; el.style.color = err ? '#b91c1c' : ''; }
+    function setSync(msg, err=false){ const el=qs('#syncInfo'); if(!el) return; el.textContent=msg; el.style.color = err ? '#b91c1c' : ''; }
 
-    function openDialog(d){ try{ d.showModal(); }catch{ d.setAttribute('open',''); document.body.classList.add('modal-open'); } }
-    function closeDialog(d){ try{ d.close(); }catch{ d.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
-    // Polyfill
+    function openDialog(d){ try{ d.showModal(); } catch{ d.setAttribute('open',''); document.body.classList.add('modal-open'); } }
+    function closeDialog(d){ try{ d.close(); } catch{ d.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
+    // Dialog Polyfill
     (function(){ const t=document.createElement('dialog'); const ok=!!window.HTMLDialogElement && typeof t.showModal==='function';
       if(ok) return; const m={show(){this.setAttribute('open','');},showModal(){this.setAttribute('open','');document.body.classList.add('modal-open');},close(){this.removeAttribute('open');document.body.classList.remove('modal-open');}};
       document.querySelectorAll('dialog').forEach(d=>Object.assign(d,m));
@@ -250,10 +240,10 @@
       selectedDayIndex: 0,
       usingCloud: false
     };
-    const LS_KEY_BOOK='malia_bookings_v5';
-    const LS_KEY_SETTINGS='malia_settings_v5';
-    const LS_KEY_DAYS='malia_days_v5';
-    const LS_KEY_ADMIN='malia_admin_v2';
+    const LS_KEY_BOOK='malia_bookings_v6';
+    const LS_KEY_SETTINGS='malia_settings_v6';
+    const LS_KEY_DAYS='malia_days_v6';
+    const LS_KEY_ADMIN='malia_admin_v3';
 
     function loadLocal(){
       try{
@@ -332,13 +322,11 @@
       state.admin=!!on; saveLocal();
       qs('#btnLogin')?.classList.toggle('hidden', state.admin);
       qs('#btnLogout')?.classList.toggle('hidden', !state.admin);
-      // Tabsichtbarkeit
-      qs('[data-tab="admin"]')?.classList.toggle('opacity-60', !state.admin);
-      qs('#btnBlock').disabled = !state.admin;
-      qs('#btnUnblock').disabled = !state.admin;
-      qs('#btnClearDay').disabled = !state.admin;
+      qs('#adminPanel')?.classList.toggle('hidden', !state.admin);
       qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length===5);
       qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length!==5);
+      // Admin Buttons aktivieren
+      ['btnBlock','btnUnblock','btnClearDay'].forEach(id => { const b=qs('#'+id); if(b) b.disabled = !state.admin; });
       updateUIDOutput();
       renderShell();
     }
@@ -348,15 +336,15 @@
       if(!el) return; if(state.admin && uid){ el.textContent='UID '+uid; btn?.classList.remove('hidden'); } else { el.textContent='keine UID'; btn?.classList.add('hidden'); }
     }
 
-    // Render Shell
+    // Render
     function renderShell(){
       renderDayStrip();
       renderTimeline();
-      renderDaysPills();
       qs('#hourStart').value = state.hourStart;
       qs('#hourEnd').value = state.hourEnd;
       const hasDays = state.days.length===5;
       qs('#emptyMsg').classList.toggle('hidden', hasDays);
+      qs('#setupNotice').classList.toggle('hidden', hasDays);
     }
 
     function renderDayStrip(){
@@ -367,9 +355,17 @@
         const b=document.createElement('button');
         b.className = 'px-3 py-2 rounded-full text-sm font-semibold transition ' + (i===state.selectedDayIndex ? 'bg-white shadow' : 'pill');
         b.textContent=fmt.format(d);
-        b.addEventListener('click', ()=>{ state.selectedDayIndex=i; saveLocal(); renderTimeline(); });
+        b.addEventListener('click', ()=>{ setDayIndex(i); });
         wrap.appendChild(b);
       });
+    }
+
+    function setDayIndex(i){
+      const max = state.days.length - 1;
+      state.selectedDayIndex = Math.max(0, Math.min(max, i));
+      saveLocal();
+      renderDayStrip();
+      renderTimeline();
     }
 
     function slotInfo(dateISO, hour){
@@ -484,20 +480,16 @@
       state.days=arr; state.selectedDayIndex=0; saveLocal();
       await syncSettingsCompat(); subscribeCloudCompat(); renderShell(); closeDialog(qs('#dlgDays'));
     }
-    function renderDaysPills(){
-      const wrap=qs('#daysPills'); wrap.innerHTML='';
-      state.days.forEach(iso=>{ const d=makeDateFromISO(iso); const el=document.createElement('span'); el.className='px-3 py-1 rounded-full text-sm pill'; el.textContent=fmt.format(d); wrap.appendChild(el); });
-      qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length===5);
-      qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length!==5);
-    }
 
-    // Lokal
+    // Lokal Fallback
     function addLocal(item){ state.bookings[item.dateISO]??=[]; state.bookings[item.dateISO].push({...item, id:Math.random().toString(36).slice(2)}); saveLocal(); renderTimeline(); }
     function deleteLocal(item){ const arr=state.bookings[item.dateISO]||[]; const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr.splice(i,1); saveLocal(); renderTimeline(); }
 
     // Celebration
-    function toast(msg='Danke für deinen Eintrag', ms=1800){ const t=qs('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); }
-    function celebrate(){ toast(); if(window.matchMedia('(max-width: 767px)').matches){ startFireworks(1200); if(navigator.vibrate) navigator.vibrate(40); } }
+    function centerToast(msg='Danke für deinen Eintrag', ms=1600){
+      const t=qs('#centerToast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=> t.classList.remove('show'), ms);
+    }
+    function celebrate(){ centerToast(); if(window.matchMedia('(max-width: 767px)').matches){ startFireworks(1200); if(navigator.vibrate) navigator.vibrate(40); } }
     function startFireworks(durationMs=1500){
       const cv=qs('#fx'); const ctx=cv.getContext('2d'); const DPR=Math.max(1, window.devicePixelRatio||1);
       function resize(){ cv.width=innerWidth*DPR; cv.height=innerHeight*DPR; } resize();
@@ -513,19 +505,30 @@
       window.addEventListener('resize', resize, { once:true });
     }
 
-    // Tabs
-    function activateTab(id){
-      ['plan','days','admin'].forEach(t=>{
-        qs('#tab-'+t).classList.toggle('hidden', t!==id);
-        const btn=[...document.querySelectorAll('.tab-btn')].find(b=>b.dataset.tab===t);
-        if(btn) btn.classList.toggle('tab-active', t===id);
+    // Swipe Navigation
+    function initSwipe(){
+      const el = qs('#appMain');
+      let sx=0, sy=0, st=0;
+      el.addEventListener('touchstart', e=>{
+        const t=e.changedTouches[0]; sx=t.clientX; sy=t.clientY; st=Date.now();
+      }, {passive:true});
+      el.addEventListener('touchend', e=>{
+        const t=e.changedTouches[0]; const dx=t.clientX-sx; const dy=t.clientY-sy; const dt=Date.now()-st;
+        const ax=Math.abs(dx), ay=Math.abs(dy);
+        if(ax>60 && ay<50 && dt<700){
+          if(dx<0) setDayIndex(state.selectedDayIndex+1);
+          else setDayIndex(state.selectedDayIndex-1);
+        }
+      });
+      // Pfeiltasten auf Desktop
+      window.addEventListener('keydown', e=>{
+        if(e.key==='ArrowRight') setDayIndex(state.selectedDayIndex+1);
+        if(e.key==='ArrowLeft') setDayIndex(state.selectedDayIndex-1);
       });
     }
 
     // Events
     function initUI(){
-      // Tabs
-      document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> activateTab(b.dataset.tab)));
       // Login
       qs('#btnLogin')?.addEventListener('click', ()=> openDialog(qs('#dlgLogin')));
       qs('#btnCancelLogin')?.addEventListener('click', ()=> closeDialog(qs('#dlgLogin')));
@@ -568,8 +571,7 @@
       const url=new URL(location.href); const p=url.searchParams.get('days');
       if(p){ const arr=p.split(',').map(s=>s.trim()).filter(Boolean); if(arr.length===5){ state.days=arr; saveLocal(); } }
 
-      // Start mit Tab Plan
-      activateTab('plan');
+      initSwipe();
     }
 
     // Start
