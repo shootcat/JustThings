@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Firebase Test</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<pre id="out">Starte Test…</pre>
+<script>
+const out = s => document.getElementById('out').textContent += "\n" + s;
+out("Host: " + location.host);
+const firebaseConfig = {
+  apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+  authDomain: "geburt-ded5c.firebaseapp.com",
+  projectId: "geburt-ded5c",
+  appId: "1:528584992005:web:14dea3f914a432e317c36c"
+};
+try {
+  firebase.initializeApp(firebaseConfig);
+  out("Projekt: " + firebase.app().options.projectId);
+} catch(e) { out("Init Fehler: " + e.message); }
+
+firebase.auth().signInAnonymously()
+  .then(cred => {
+    out("Angemeldet. UID: " + cred.user.uid);
+    return firebase.firestore().collection("settings").doc("config")
+      .set({ testWriteAt: new Date(), by: cred.user.uid }, { merge: true });
+  })
+  .then(() => out("Schreiben in settings/config ok"))
+  .catch(e => out("Fehler: " + e.code + " " + e.message));
+</script>
+</body>
+</html>
