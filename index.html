@@ -2,33 +2,21 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Malia Besuchsplaner</title>
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#ffd6e7" />
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Web Fonts optional -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    html, body { height: 100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
-    .glass { background: rgba(255,255,255,0.72); backdrop-filter: blur(14px); }
-    .pill { background: rgba(15,23,42,0.06); }
-    .slot { transition: transform .06s; }
-    .slot:active { transform: scale(.98); }
-    dialog::backdrop { background: rgba(0,0,0,.35); }
-    .snap-x { scroll-snap-type: x mandatory; }
-    .snap-start { scroll-snap-align: start; }
-  </style>
 
   <!-- Firebase Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <!-- Deine Firebase Konfiguration -->
   <script>
-    // Deine echte Config einsetzen
     const firebaseConfig = {
       apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
       authDomain: "geburt-ded5c.firebaseapp.com",
@@ -39,252 +27,179 @@
       measurementId: "G-SX8G2KPVL8"
     };
   </script>
+
+  <style>
+    html, body { height: 100%; }
+    body.modal-open { overflow: hidden; }
+    dialog { z-index: 60; }
+    dialog::backdrop { background: rgba(0,0,0,.35); }
+    .glass { background: rgba(255,255,255,.65); backdrop-filter: blur(10px) saturate(135%); }
+    .pill { background: rgba(15,23,42,.06); }
+    .slot { transition: transform .05s; }
+    .slot:active { transform: scale(.98); }
+    .tab-active { background: rgba(255,255,255,.9); }
+    /* Toast */
+    #toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(60px);
+      background: linear-gradient(135deg, #2dd07f, #40e594); color: #0b3b2e; padding: 12px 16px; border-radius: 12px;
+      font-weight: 700; box-shadow: 0 12px 28px rgba(0,0,0,.18); opacity: 0; pointer-events: none; z-index: 80;
+      transition: transform .25s cubic-bezier(.2,.8,.2,1), opacity .25s;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* Feuerwerk */
+    #fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
+  </style>
 </head>
-<body class="min-h-full text-slate-900 bg-gradient-to-br from-rose-50 via-rose-100 to-pink-50">
-  <!-- Hero mit Bild aus dem Web und Rosé Overlay -->
-  <section class="relative">
-    <img src="https://m.media-amazon.com/images/I/615AjHWiW+L.jpg" alt="Sanftes Babyfoto" class="w-full h-[220px] md:h-[280px] object-cover">
-    <div class="absolute inset-0 bg-gradient-to-b from-rose-500/30 via-rose-500/20 to-rose-500/10"></div>
-    <div class="absolute inset-0 flex items-end">
-      <div class="max-w-6xl mx-auto px-4 md:px-6 w-full pb-4">
-        <div class="glass rounded-3xl p-4 md:p-6 border border-white/50 shadow-lg">
-          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-            <div>
-              <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-rose-900">Malia Besuchsplaner</h1>
-              <p id="syncInfo" class="text-sm text-rose-900/80 mt-1">Lokaler Modus aktiv. Daten bleiben auf diesem Gerät</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button id="btnAdmin" class="px-4 py-2 rounded-2xl bg-rose-600 text-white hover:bg-rose-700 shadow">Papa Login</button>
-              <button id="btnLogout" class="px-4 py-2 rounded-2xl bg-white text-rose-700 hover:bg-rose-50 border border-rose-200 shadow hidden">Logout</button>
-              <button id="btnShare" class="px-4 py-2 rounded-2xl bg-rose-500 text-white hover:bg-rose-600 shadow">Link kopieren</button>
-            </div>
-          </div>
+<body class="min-h-full bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 text-slate-900">
+
+  <!-- App Header mit Tageswahl -->
+  <header class="sticky top-0 z-40 border-b border-white/60 glass">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl shadow-inner flex items-center justify-center text-lg"
+             style="background: linear-gradient(135deg,#ffd6e7,#ffc3da); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 8px 24px rgba(255,122,162,.28);">💗</div>
+        <div>
+          <h1 class="m-0 text-xl font-extrabold tracking-tight">Malia Kalender</h1>
+          <p id="syncInfo" class="text-xs text-slate-700">Cloud Sync wird aufgebaut</p>
         </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnLogin" class="px-3 py-2 rounded-xl bg-pink-600 text-white shadow hover:bg-pink-700">Papa Login</button>
+        <button id="btnLogout" class="px-3 py-2 rounded-xl bg-slate-200 text-slate-800 shadow hover:bg-slate-300 hidden">Logout</button>
       </div>
     </div>
-  </section>
 
-  <main class="max-w-6xl mx-auto px-4 md:px-6 -mt-10 md:-mt-14 pb-16">
-    <!-- Status Leiste -->
-    <section class="glass rounded-3xl p-4 md:p-6 border border-white/50 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="font-semibold">Geplante Tage</h2>
-          <div id="daysPills" class="mt-2 flex flex-wrap gap-2"></div>
-        </div>
-        <div id="adminBar" class="hidden">
-          <div class="flex flex-wrap items-center gap-2">
-            <button id="btnDaysSetup" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Tage festlegen</button>
-            <button id="btnDaysEdit" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Tage bearbeiten</button>
-            <span class="ml-2 text-sm">Admin aktiv</span>
-            <span id="uidOut" class="ml-2 text-xs text-slate-500">keine UID</span>
-            <button id="btnCopyUID" class="px-2 py-1 text-xs rounded-lg bg-slate-200 hover:bg-slate-300 hidden">UID kopieren</button>
-          </div>
+    <!-- Tagesauswahl als Pilleiste -->
+    <div class="max-w-3xl mx-auto px-3 pb-3">
+      <div id="dayStrip" class="flex overflow-x-auto gap-2 no-scrollbar">
+        <!-- Pills werden per JS gesetzt -->
+      </div>
+    </div>
+  </header>
+
+  <!-- Inhaltstabs -->
+  <main class="max-w-3xl mx-auto px-3 pb-24 pt-3">
+    <!-- Tab Plan -->
+    <section id="tab-plan">
+      <ul id="timeline" class="space-y-3">
+        <!-- Slots per JS -->
+      </ul>
+      <p id="emptyMsg" class="mt-6 text-center text-sm text-slate-600 hidden">Noch keine Tage gewählt</p>
+    </section>
+
+    <!-- Tab Tage -->
+    <section id="tab-days" class="hidden">
+      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4">
+        <h2 class="text-lg font-semibold">Tage verwalten</h2>
+        <p class="text-sm text-slate-700 mt-1">Fünf einzelne Tage festlegen. Link für Familie teilen</p>
+        <div class="mt-3 flex flex-wrap gap-2" id="daysPills"></div>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button id="btnDaysSetup" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 hidden">Tage festlegen</button>
+          <button id="btnDaysEdit" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 hidden">Tage bearbeiten</button>
+          <button id="btnShare" class="px-3 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600">Link kopieren</button>
         </div>
       </div>
-      <p id="setupNotice" class="mt-3 text-sm text-slate-700 hidden">Bitte Papa meldet sich an und legt fünf Tage fest</p>
-    </section>
 
-    <!-- Einstellungen nur für Papa -->
-    <section id="settingsPanel" class="glass rounded-3xl p-4 md:p-6 border border-white/50 shadow-lg mt-4 hidden">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-        <label class="flex items-center gap-2"><span class="w-36">Startstunde</span><input id="hourStart" type="number" min="0" max="23" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
-        <label class="flex items-center gap-2"><span class="w-36">Endstunde</span><input id="hourEnd" type="number" min="1" max="24" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
-        <button id="btnBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Blocken</button>
-        <button id="btnUnblock" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
+      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4 mt-4">
+        <h3 class="text-base font-semibold">Zeiten</h3>
+        <div class="grid grid-cols-2 gap-3 mt-2">
+          <label class="flex items-center gap-2"><span class="w-28">Start</span><input id="hourStart" type="number" min="0" max="23" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
+          <label class="flex items-center gap-2"><span class="w-28">Ende</span><input id="hourEnd" type="number" min="1" max="24" class="px-3 py-2 rounded-xl border border-slate-300 w-full"></label>
+        </div>
+        <p class="text-xs text-slate-600 mt-2">Zeitrahmen für den Tagesplan</p>
       </div>
-      <div class="mt-3"><button id="btnClearDay" class="px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Tag leeren</button></div>
     </section>
 
-    <!-- Desktop Kalender -->
-    <section id="desktopCal" class="hidden md:block glass rounded-3xl shadow-lg border border-white/50 overflow-hidden mt-4">
-      <div id="calHeader" class="grid"></div>
-      <div id="calBody" class="grid"></div>
-    </section>
-
-    <!-- Mobile Kalender -->
-    <section id="mobileCal" class="md:hidden mt-4">
-      <div id="mobileStrip" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 -mx-2 px-1 py-1"></div>
-      <p class="text-center text-xs text-slate-600 mt-2">Wische seitlich durch die Tage. Scrolle im Tag nach unten für die Stunden</p>
+    <!-- Tab Admin -->
+    <section id="tab-admin" class="hidden">
+      <div class="glass rounded-2xl border border-white/60 shadow-lg p-4">
+        <h2 class="text-lg font-semibold">Admin</h2>
+        <p class="text-sm text-slate-700 mt-1">Einträge verwalten</p>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <button id="btnBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Block setzen</button>
+          <button id="btnUnblock" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
+          <button id="btnClearDay" class="px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Ausgewählten Tag leeren</button>
+          <span id="uidOut" class="text-xs text-slate-500 ml-1">keine UID</span>
+          <button id="btnCopyUID" class="px-2 py-1 text-xs rounded-lg bg-slate-200 hover:bg-slate-300 hidden">UID kopieren</button>
+        </div>
+        <p class="text-xs text-slate-600 mt-3">Wähle oben einen Tag. Klicke unten auf freie Slots zum Blocken oder in Einträge zum Löschen</p>
+      </div>
     </section>
   </main>
 
-  <!-- Buchungsdialog -->
+  <!-- Tab Leiste unten -->
+  <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 px-2 py-2 glass rounded-2xl border border-white/60 shadow-xl">
+    <div class="grid grid-cols-3 gap-2 w-[min(96vw,640px)]">
+      <button class="tab-btn tab-active px-3 py-2 rounded-xl text-sm font-semibold" data-tab="plan">Plan</button>
+      <button class="tab-btn px-3 py-2 rounded-xl text-sm font-semibold" data-tab="days">Tage</button>
+      <button class="tab-btn px-3 py-2 rounded-xl text-sm font-semibold" data-tab="admin">Admin</button>
+    </div>
+  </nav>
+
+  <!-- Dialoge -->
   <dialog id="dlgBook" class="rounded-2xl p-0 w-full max-w-md">
-    <div class="p-4 border-b bg-rose-50 rounded-t-2xl"><h2 class="font-semibold">Slot buchen</h2><p id="dlgBookWhen" class="text-sm text-slate-600"></p></div>
+    <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
+      <h2 class="font-semibold">Slot buchen</h2>
+      <p id="dlgBookWhen" class="text-sm text-slate-600"></p>
+    </div>
     <div class="p-4 space-y-3">
       <label class="block"><span class="text-sm">Name</span><input id="inName" required class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Dein Name"></label>
       <label class="block"><span class="text-sm">Kontakt optional</span><input id="inContact" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Telefon oder E Mail"></label>
-      <label class="block"><span class="text-sm">Dauer</span><select id="inDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"><option value="1">1 Stunde</option><option value="2">2 Stunden</option></select></label>
+      <label class="block"><span class="text-sm">Dauer</span>
+        <select id="inDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300">
+          <option value="1">1 Stunde</option><option value="2">2 Stunden</option>
+        </select>
+      </label>
       <label class="block"><span class="text-sm">Notiz optional</span><textarea id="inNote" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" rows="2" placeholder="Kurze Notiz"></textarea></label>
     </div>
-    <div class="p-4 border-t flex justify-end gap-2"><button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBooking">Abbrechen</button><button type="button" id="btnConfirmBooking" class="px-3 py-2 rounded-xl bg-rose-600 text-white">Buchen</button></div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBooking">Abbrechen</button>
+      <button type="button" id="btnConfirmBooking" class="px-3 py-2 rounded-xl bg-pink-600 text-white">Buchen</button>
+    </div>
   </dialog>
 
-  <!-- Blockdialog -->
   <dialog id="dlgBlock" class="rounded-2xl p-0 w-full max-w-md">
-    <div class="p-4 border-b bg-rose-50 rounded-t-2xl"><h2 class="font-semibold">Zeitraum blocken</h2><p id="dlgBlockWhen" class="text-sm text-slate-600"></p></div>
+    <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
+      <h2 class="font-semibold">Zeitraum blocken</h2>
+      <p id="dlgBlockWhen" class="text-sm text-slate-600"></p>
+    </div>
     <div class="p-4 space-y-3">
       <label class="block"><span class="text-sm">Grund</span><input id="inBlockReason" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Arzt, Hebamme, Ruhezeit"></label>
-      <label class="block"><span class="text-sm">Dauer</span><select id="inBlockDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"><option value="1">1 Stunde</option><option value="2">2 Stunden</option></select></label>
+      <label class="block"><span class="text-sm">Dauer</span>
+        <select id="inBlockDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300">
+          <option value="1">1 Stunde</option><option value="2">2 Stunden</option>
+        </select>
+      </label>
     </div>
-    <div class="p-4 border-t flex justify-end gap-2"><button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBlock">Abbrechen</button><button type="button" id="btnConfirmBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white">Block setzen</button></div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBlock">Abbrechen</button>
+      <button type="button" id="btnConfirmBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white">Block setzen</button>
+    </div>
   </dialog>
 
-  <!-- Einziger Login als Bottom Sheet -->
-  <dialog id="loginSheet" class="rounded-t-3xl w-full max-w-md p-0 md:rounded-2xl">
-    <div class="p-4 border-b bg-rose-50 rounded-t-3xl md:rounded-t-2xl"><h2 class="font-semibold">Papa Login</h2><p class="text-sm text-slate-600">Nur für Verwalten der Tage</p></div>
+  <dialog id="dlgLogin" class="rounded-2xl p-0 w-full max-w-sm">
+    <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
+      <h2 class="font-semibold">Papa Login</h2>
+      <p class="text-sm text-slate-600">Nur für Verwaltung</p>
+    </div>
     <div class="p-4 space-y-3">
-      <label class="block"><span class="text-sm">PIN</span><input id="inPin" type="password" autocomplete="off" inputmode="numeric" pattern="\\d*" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="PIN 1597"></label>
+      <label class="block"><span class="text-sm">PIN</span><input id="inPin" type="password" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="PIN 1597"></label>
     </div>
-    <div class="p-4 border-t flex justify-end gap-2"><button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelLogin">Abbrechen</button><button type="button" id="btnLoginConfirm" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button></div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelLogin">Abbrechen</button>
+      <button type="button" id="btnLoginConfirm" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button>
+    </div>
   </dialog>
 
-  <script>
-    // Einstellungen
-    const ADMIN_PIN = '1597';
-    const DEFAULT_HOUR_START = 9;
-    const DEFAULT_HOUR_END = 20;
+  <!-- Toast und Feuerwerk -->
+  <div id="toast">Danke für deinen Eintrag</div>
+  <canvas id="fx"></canvas>
 
-    // Helfer
-    const qs = s => document.querySelector(s);
-    const fmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
-    const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-    const pad2 = n => String(n).padStart(2,'0');
-    const hourLabel = h => pad2(h) + ':00';
-    const clampHour = h => Number.isNaN(h) ? DEFAULT_HOUR_START : Math.max(0, Math.min(24, h));
-    function makeDateFromISO(iso) { const [y,m,da] = iso.split('-').map(Number); return new Date(y, m-1, da); }
-    function escapeHTML(s){ return String(s).replace(/[&<>\"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c] || c)); }
-
-    // State
-    let state = { admin:false, hourStart:DEFAULT_HOUR_START, hourEnd:DEFAULT_HOUR_END, days:[], selected:null, bookings:{}, usingCloud:false, mobileDayIndex:0 };
-    const LS_KEY_BOOK = 'malia_bookings_v4';
-    const LS_KEY_SETTINGS = 'malia_settings_v4';
-    const LS_KEY_DAYS = 'malia_days_v4';
-    const LS_KEY_ADMIN = 'malia_admin_v1';
-
-    function loadLocal(){ try { const b = JSON.parse(localStorage.getItem(LS_KEY_BOOK)||'{}'); const s = JSON.parse(localStorage.getItem(LS_KEY_SETTINGS)||'{}'); const d = JSON.parse(localStorage.getItem(LS_KEY_DAYS)||'[]'); state.bookings=b; if(s.hourStart!=null) state.hourStart=s.hourStart; if(s.hourEnd!=null) state.hourEnd=s.hourEnd; if(s.mobileDayIndex!=null) state.mobileDayIndex=s.mobileDayIndex; if(Array.isArray(d)) state.days=d; if(localStorage.getItem(LS_KEY_ADMIN)==='1') state.admin=true; } catch{} }
-    function saveLocal(){ localStorage.setItem(LS_KEY_BOOK, JSON.stringify(state.bookings)); localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({hourStart:state.hourStart, hourEnd:state.hourEnd, mobileDayIndex:state.mobileDayIndex})); localStorage.setItem(LS_KEY_DAYS, JSON.stringify(state.days)); }
-
-    // Firebase
-    let fb = { app:null, db:null, auth:null, unsub:null };
-    async function initFirebase(){
-      try {
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        fb.app = firebase.app(); fb.db = firebase.firestore(); fb.auth = firebase.auth();
-        fb.auth.onAuthStateChanged(() => updateUIDOutput());
-        await fb.auth.signInAnonymously();
-        state.usingCloud = true; setSync('Cloud Sync aktiv. Daten werden geteilt');
-        subscribeSettings(); subscribeCloud();
-      } catch(e){ console.error(e); state.usingCloud = false; setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Authentication und autorisierte Domain', true); }
-    }
-
-    function setSync(msg, isError=false){ const el = qs('#syncInfo'); if(!el) return; el.textContent = msg; el.style.color = isError ? '#b91c1c' : ''; }
-
-    function subscribeSettings(){ if(!state.usingCloud) return; const ref = fb.db.collection('settings').doc('config'); ref.onSnapshot(snap => { if(!snap.exists) return; const cfg=snap.data(); let changed=false; if(Array.isArray(cfg.days) && JSON.stringify(cfg.days)!==JSON.stringify(state.days)){ state.days=cfg.days; state.mobileDayIndex=0; changed=true; } if(Number.isInteger(cfg.hourStart) && cfg.hourStart!==state.hourStart){ state.hourStart=cfg.hourStart; changed=true; } if(Number.isInteger(cfg.hourEnd) && cfg.hourEnd!==state.hourEnd){ state.hourEnd=cfg.hourEnd; changed=true; } if(changed){ saveLocal(); updateDaysUI(); subscribeCloud(); } }); }
-
-    function syncSettings(){ if(!state.usingCloud) return Promise.resolve(); return fb.db.collection('settings').doc('config').set({ days:state.days, hourStart:state.hourStart, hourEnd:state.hourEnd, updatedAt:new Date(), updatedBy: fb.auth?.currentUser?.uid || null }, { merge:true }).catch(e => { console.error(e); setSync('Cloud Einstellungen konnten nicht gespeichert werden. ' + (e.code || e.message), true); }); }
-
-    function subscribeCloud(){ if(!state.usingCloud || !state.days.length) return; const q = fb.db.collection('bookings').where('dateISO','in',state.days); fb.unsub?.(); fb.unsub = q.onSnapshot(snap => { state.days.forEach(iso => state.bookings[iso]=[]); snap.forEach(doc => { const it = { ...doc.data(), id: doc.id }; if(!state.days.includes(it.dateISO)) return; state.bookings[it.dateISO] ??= []; state.bookings[it.dateISO].push(it); }); renderAll(); saveLocal(); }, err => setSync('Cloud Abo Fehler: ' + err.message, true)); }
-
-    async function cloudAdd(item){ if(!state.usingCloud){ addLocal(item); return; } try { await fb.db.collection('bookings').add({ ...item, createdAt:new Date(), createdBy: fb.auth?.currentUser?.uid || null }); } catch(e){ console.error(e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. ' + (e.code || e.message), true); addLocal(item); } }
-    async function cloudDelete(item){ if(!state.usingCloud){ deleteLocal(item); return; } try { if(item.id) await fb.db.collection('bookings').doc(item.id).delete(); } catch(e){ console.error(e); setSync('Cloud Löschen fehlgeschlagen ' + (e.code || e.message), true); } }
-
-    // Admin Login
-    function openLogin(){ const dlg = qs('#loginSheet'); if(!dlg) return; try { dlg.showModal(); } catch { dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
-    function closeLogin(){ const dlg = qs('#loginSheet'); if(!dlg) return; try { dlg.close(); } catch { dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
-
-    function setAdmin(on){ state.admin = !!on; try { localStorage.setItem(LS_KEY_ADMIN, state.admin ? '1' : '0'); } catch{}; qs('#adminBar')?.classList.toggle('hidden', !state.admin); qs('#settingsPanel')?.classList.toggle('hidden', !state.admin); qs('#btnLogout')?.classList.toggle('hidden', !state.admin); qs('#btnAdmin')?.classList.toggle('hidden', state.admin); updateUIDOutput(); renderAll(); }
-    function doLogin(){ const pin = qs('#inPin')?.value.trim() || ''; if(pin !== ADMIN_PIN){ alert('Falsche PIN'); return; } setAdmin(true); closeLogin(); if(state.days.length !== 5) openDaysDialog(); }
-
-    function updateUIDOutput(){ const uid = fb?.auth?.currentUser?.uid || ''; const el = qs('#uidOut'); const btn = qs('#btnCopyUID'); if(!el) return; if(state.admin && uid){ el.textContent = 'UID ' + uid; btn?.classList.remove('hidden'); } else { el.textContent = 'keine UID. Cloud Anmeldung fehlt'; btn?.classList.add('hidden'); } }
-
-    // Render
-    function renderAll(){ renderDesktop(); renderMobileStrip(); saveLocal(); }
-
-    function renderDesktop(){ const desktop = qs('#desktopCal'); const header = qs('#calHeader'); const body = qs('#calBody'); const show = window.matchMedia('(min-width: 768px)').matches && state.days.length===5; desktop.classList.toggle('hidden', !show); if(!show) return; header.style.gridTemplateColumns = `100px repeat(${state.days.length}, minmax(0, 1fr))`; body.style.gridTemplateColumns = `100px repeat(${state.days.length}, minmax(0, 1fr))`; header.innerHTML = `<div class="px-3 py-2 text-sm font-medium pill">Zeit</div>`; state.days.forEach(iso => { const d = makeDateFromISO(iso); const el = document.createElement('div'); el.className = 'px-3 py-2 text-sm font-semibold pill'; el.textContent = fmt.format(d); header.appendChild(el); }); body.innerHTML = ''; for(let h=state.hourStart; h<state.hourEnd; h++){ const z=document.createElement('div'); z.className='px-3 py-3 border-b border-white/40 text-sm text-slate-700'; z.textContent=hourLabel(h); body.appendChild(z); state.days.forEach(iso => { const cell=document.createElement('button'); cell.className='slot w-full text-left px-3 py-2 border-b border-l border-white/40 hover:bg-white/50'; fillSlotCell(cell, iso, h); body.appendChild(cell); }); } }
-
-    function renderMobileStrip(){ const wrap = qs('#mobileCal'); const strip = qs('#mobileStrip'); const show = !window.matchMedia('(min-width: 768px)').matches && state.days.length===5; wrap.classList.toggle('hidden', !show); if(!show) return; strip.innerHTML=''; state.days.forEach((iso) => { const d = makeDateFromISO(iso); const pane = document.createElement('div'); pane.className = 'snap-start shrink-0 w-full glass rounded-3xl shadow-lg border border-white/50 p-3'; pane.innerHTML = `<div class="flex items-center justify-between pb-2"><div class="font-semibold">${fmt.format(d)}</div></div><div class="hoursWrap"><ul class="hoursList divide-y divide-rose-100"></ul></div>`; const list = pane.querySelector('.hoursList'); for(let h=state.hourStart; h<state.hourEnd; h++){ const li=document.createElement('li'); const btn=document.createElement('button'); btn.className='slot w-full flex items-center justify-between px-4 py-3'; btn.dataset.date=iso; btn.dataset.hour=String(h); btn.innerHTML = `<span class="text-sm text-slate-700">${hourLabel(h)}</span><span class="ml-3"></span>`; fillSlotButtonMobile(btn, iso, h); li.appendChild(btn); list.appendChild(li); } strip.appendChild(pane); }); setMobileHoursHeights(); }
-
-    function setMobileHoursHeights(){ const reserve = 320; const h = Math.max(240, window.innerHeight - reserve); document.querySelectorAll('.hoursWrap').forEach(el => { el.style.maxHeight = h + 'px'; el.style.overflowY = 'auto'; }); }
-
-    function slotInfo(dateISO, hour){ const items = state.bookings[dateISO] || []; const start = items.find(x => x.hour === hour && x.kind !== 'free'); if(start) return { kind:start.kind, item:start }; const prev = items.find(x => x.hour === hour - 1 && x.duration === 2); if(prev) return { kind:prev.kind, item:prev }; return { kind:'free' }; }
-    function isSlotFree(dateISO, hour){ return slotInfo(dateISO, hour).kind === 'free'; }
-
-    function fillSlotCell(cell, iso, hour){ cell.dataset.date=iso; cell.dataset.hour=String(hour); const info=slotInfo(iso,hour); cell.replaceChildren(); if(info.kind==='free'){ cell.innerHTML = `<div class='text-slate-800'>Frei</div>`; cell.addEventListener('click', () => onFreeClick(iso, hour), { once:true }); } else if(info.kind==='visit'){ const it=info.item; cell.classList.add('bg-emerald-50'); cell.innerHTML = `<div class='font-medium'>Besuch: ${escapeHTML(it.name)}</div><div class='text-xs text-slate-600'>${it.duration}h${it.note ? ' · ' + escapeHTML(it.note) : ''}</div>`; if(state.admin){ cell.classList.add('hover:bg-emerald-100'); cell.addEventListener('click', () => { if(confirm('Buchung löschen')) cloudDelete(it); }, { once:true }); } } else if(info.kind==='block'){ const it=info.item; cell.classList.add('bg-amber-50'); cell.innerHTML = `<div class='font-medium'>Blockiert</div><div class='text-xs text-slate-600'>${escapeHTML(it.note || 'Termin')}</div>`; if(state.admin){ cell.classList.add('hover:bg-amber-100'); cell.addEventListener('click', () => { if(confirm('Block aufheben')) cloudDelete(it); }, { once:true }); } } }
-
-    function fillSlotButtonMobile(btn, iso, hour){ const info=slotInfo(iso,hour); const right = btn.querySelector('span:last-child'); btn.onclick=null; if(info.kind==='free'){ right.innerHTML = `<span class='inline-flex items-center gap-2 text-emerald-700'><span class='w-2 h-2 rounded-full bg-emerald-500'></span>Frei</span>`; btn.addEventListener('click', () => onFreeClick(iso, hour)); } else if(info.kind==='visit'){ const it=info.item; right.innerHTML = `<span class='inline-flex items-center gap-2 text-emerald-800'><span class='w-2 h-2 rounded-full bg-emerald-600'></span>${escapeHTML(it.name)} · ${it.duration}h</span>`; if(state.admin) btn.addEventListener('click', () => { if(confirm('Buchung löschen')) cloudDelete(it); }); } else if(info.kind==='block'){ const it=info.item; right.innerHTML = `<span class='inline-flex items-center gap-2 text-amber-800'><span class='w-2 h-2 rounded-full bg-amber-600'></span>Blockiert</span>`; if(state.admin) btn.addEventListener('click', () => { if(confirm('Block aufheben')) cloudDelete(it); }); } }
-
-    function onFreeClick(dateISO, hour){ state.selected = { dateISO, hour }; if(state.admin && blockMode.active){ qs('#dlgBlockWhen').textContent = humanWhen(dateISO, hour); qs('#inBlockReason').value=''; qs('#inBlockDuration').value='1'; openDialog(qs('#dlgBlock')); return; } qs('#dlgBookWhen').textContent = humanWhen(dateISO, hour); qs('#inName').value=''; qs('#inContact').value=''; qs('#inDuration').value='1'; qs('#inNote').value=''; openDialog(qs('#dlgBook')); }
-    function openDialog(dlg){ if(!dlg) return; try{ dlg.showModal(); } catch{ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
-    function closeDialog(dlg){ if(!dlg) return; try{ dlg.close(); } catch{ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
-    function humanWhen(dateISO, hour){ const d=makeDateFromISO(dateISO); return `${fmt.format(d)} · ${hourLabel(hour)}`; }
-
-    async function onConfirmBooking(){ const sel=state.selected; if(!sel) return; const name=qs('#inName').value.trim(); const contact=qs('#inContact').value.trim(); const duration=Number(qs('#inDuration').value); const note=qs('#inNote').value.trim(); if(!name){ alert('Bitte Name eintragen'); return; } if(duration!==1 && duration!==2){ alert('Dauer ungültig'); return; } if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist nicht mehr frei'); return; } if(duration===2){ if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb der Zeitspanne'); return; } if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; } } await cloudAdd({ kind:'visit', name, contact, note, dateISO:sel.dateISO, hour:sel.hour, duration }); closeDialog(qs('#dlgBook')); }
-
-    // Blocken
-    const blockMode = { active:false };
-    function beginBlock(){ blockMode.active=true; alert('Klicke auf einen freien Slot zum Blocken'); }
-    function beginUnblock(){ blockMode.active=false; alert('Klicke auf einen Block zum Aufheben'); }
-    async function onConfirmBlock(){ const sel=state.selected; if(!sel) return; const note=qs('#inBlockReason').value.trim()||'Termin'; const duration=Number(qs('#inBlockDuration').value); if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist belegt'); return; } if(duration===2){ if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb der Zeitspanne'); return; } if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; } } await cloudAdd({ kind:'block', note, dateISO:sel.dateISO, hour:sel.hour, duration }); closeDialog(qs('#dlgBlock')); blockMode.active=false; }
-
-    function clearCurrentDay(){ if(!state.days.length) return; const dIdx=prompt('Welchen Tag leeren 1 bis '+state.days.length+'?'); const idx=Number(dIdx)-1; if(Number.isNaN(idx)||idx<0||idx>=state.days.length) return; const iso=state.days[idx]; const items=(state.bookings[iso]||[]).slice(); if(!items.length){ alert('Keine Einträge'); return; } if(!confirm('Alle Einträge dieses Tages löschen')) return; items.forEach(it => cloudDelete(it)); }
-
-    function updateDaysUI(){ const pills=qs('#daysPills'); pills.innerHTML=''; if(state.days.length===0){ qs('#setupNotice').classList.remove('hidden'); } else { qs('#setupNotice').classList.add('hidden'); state.days.forEach(iso => { const d=makeDateFromISO(iso); const el=document.createElement('span'); el.className='px-3 py-1 rounded-full text-sm pill'; el.textContent = fmt.format(d); pills.appendChild(el); }); } qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length===5); qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length!==5); renderAll(); }
-
-    function openDaysDialog(){ const ids=['d1','d2','d3','d4','d5']; const vals=state.days.slice(0,5); ids.forEach((id,i)=>{ qs('#'+id).value = vals[i] || ''; }); openDialog(qs('#dlgDays')); }
-    async function saveDaysFromDialog(){ const ids=['d1','d2','d3','d4','d5']; const arr=ids.map(id=>qs('#'+id).value).filter(Boolean); if(arr.length!==5){ alert('Bitte genau fünf Tage wählen'); return; } if(new Set(arr).size!==5){ alert('Tage dürfen sich nicht wiederholen'); return; } state.days=arr; state.mobileDayIndex=0; saveLocal(); await syncSettings(); subscribeCloud(); updateDaysUI(); closeDialog(qs('#dlgDays')); }
-
-    // Storage Hilfen
-    function addLocal(item){ state.bookings[item.dateISO] ??= []; state.bookings[item.dateISO].push({ ...item, id: Math.random().toString(36).slice(2) }); saveLocal(); renderAll(); }
-    function deleteLocal(item){ const arr=state.bookings[item.dateISO]||[]; const idx=arr.findIndex(x=>x.id===item.id); if(idx>=0) arr.splice(idx,1); saveLocal(); renderAll(); }
-
-    // UI Bindings
-    function bindUI(){
-      qs('#btnAdmin').addEventListener('click', openLogin);
-      qs('#btnCancelLogin').addEventListener('click', closeLogin);
-      qs('#btnLoginConfirm').addEventListener('click', doLogin);
-      qs('#inPin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-      qs('#btnLogout').addEventListener('click', () => setAdmin(false));
-
-      qs('#hourStart').value = state.hourStart; qs('#hourEnd').value = state.hourEnd;
-      qs('#hourStart').addEventListener('change', e => { state.hourStart = clampHour(Number(e.target.value)); saveLocal(); syncSettings(); renderAll(); });
-      qs('#hourEnd').addEventListener('change', e => { state.hourEnd = clampHour(Number(e.target.value)); saveLocal(); syncSettings(); renderAll(); });
-
-      qs('#btnShare').addEventListener('click', () => { if(state.days.length!==5){ alert('Tage noch nicht festgelegt'); return; } const u=new URL(location.href); u.searchParams.set('days', state.days.join(',')); navigator.clipboard?.writeText(u.toString()); alert('Link kopiert'); });
-
-      qs('#btnBlock').addEventListener('click', beginBlock);
-      qs('#btnUnblock').addEventListener('click', beginUnblock);
-      qs('#btnCancelBlock').addEventListener('click', () => closeDialog(qs('#dlgBlock')));
-      qs('#btnConfirmBlock').addEventListener('click', onConfirmBlock);
-
-      qs('#btnCancelBooking').addEventListener('click', () => closeDialog(qs('#dlgBook')));
-      qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
-
-      qs('#btnDaysSetup').addEventListener('click', openDaysDialog);
-      qs('#btnDaysEdit').addEventListener('click', openDaysDialog);
-      qs('#btnClearDay').addEventListener('click', clearCurrentDay);
-
-      qs('#btnCopyUID').addEventListener('click', () => { const uid = fb?.auth?.currentUser?.uid || ''; if(!uid){ alert('Keine UID verfügbar'); return; } navigator.clipboard?.writeText(uid); alert('UID kopiert'); });
-    }
-
-    // Start
-    window.addEventListener('DOMContentLoaded', () => {
-      loadLocal();
-      bindUI();
-      if(state.admin) setAdmin(true);
-      renderAll();
-      if(!state.days.length) qs('#setupNotice').classList.remove('hidden');
-      initFirebase();
-      setMobileHoursHeights();
-      window.addEventListener('resize', setMobileHoursHeights);
-      window.addEventListener('orientationchange', setMobileHoursHeights);
-    });
-  </script>
-
-  <!-- Tage Dialog separat noch einmal für Safari Rendering Stabilität -->
+  <!-- Tage Dialog separat, damit closeDialog funktioniert -->
   <dialog id="dlgDays" class="rounded-2xl p-0 w-full max-w-lg">
-    <div class="p-4 border-b bg-rose-50 rounded-t-2xl"><h2 class="font-semibold">Fünf Tage festlegen</h2><p class="text-sm text-slate-600">Bitte fünf einzelne Tage wählen</p></div>
+    <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
+      <h2 class="font-semibold">Fünf Tage festlegen</h2>
+      <p class="text-sm text-slate-600">Bitte fünf einzelne Tage wählen</p>
+    </div>
     <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
       <label class="block"><span class="text-sm">Tag 1</span><input id="d1" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
       <label class="block"><span class="text-sm">Tag 2</span><input id="d2" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
@@ -292,7 +207,376 @@
       <label class="block"><span class="text-sm">Tag 4</span><input id="d4" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
       <label class="block sm:col-span-2"><span class="text-sm">Tag 5</span><input id="d5" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
     </div>
-    <div class="p-4 border-t flex justify-end gap-2"><button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelDays" onclick="(function(){const d=document.querySelector('#dlgDays'); try{d.close();}catch{d.removeAttribute('open');document.body.classList.remove('modal-open');}})();">Abbrechen</button><button type="button" id="btnSaveDays" class="px-3 py-2 rounded-xl bg-emerald-600 text-white" onclick="saveDaysFromDialog()">Speichern</button></div>
+    <div class="p-4 border-t flex justify-end gap-2">
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelDays">Abbrechen</button>
+      <button type="button" id="btnSaveDays" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Speichern</button>
+    </div>
   </dialog>
+
+  <!-- App Script -->
+  <script>
+    // Konfiguration
+    const ADMIN_PIN = '1597';
+    const DEFAULT_HOUR_START = 9;
+    const DEFAULT_HOUR_END = 20;
+
+    // Utils
+    const qs = s => document.querySelector(s);
+    const fmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    const pad2 = n => String(n).padStart(2,'0');
+    const hourLabel = h => pad2(h) + ':00';
+    const clampHour = h => Number.isNaN(h) ? DEFAULT_HOUR_START : Math.max(0, Math.min(24, h));
+    const makeDateFromISO = iso => { const [y,m,d]=iso.split('-').map(Number); return new Date(y, m-1, d); };
+    const escapeHTML = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));
+
+    function setSync(msg, err=false){ const el=qs('#syncInfo'); if(!el)return; el.textContent=msg; el.style.color = err ? '#b91c1c' : ''; }
+
+    function openDialog(d){ try{ d.showModal(); }catch{ d.setAttribute('open',''); document.body.classList.add('modal-open'); } }
+    function closeDialog(d){ try{ d.close(); }catch{ d.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
+    // Polyfill
+    (function(){ const t=document.createElement('dialog'); const ok=!!window.HTMLDialogElement && typeof t.showModal==='function';
+      if(ok) return; const m={show(){this.setAttribute('open','');},showModal(){this.setAttribute('open','');document.body.classList.add('modal-open');},close(){this.removeAttribute('open');document.body.classList.remove('modal-open');}};
+      document.querySelectorAll('dialog').forEach(d=>Object.assign(d,m));
+      new MutationObserver(()=>{document.querySelectorAll('dialog').forEach(d=>{if(!('showModal'in d))Object.assign(d,m);});}).observe(document.documentElement,{childList:true,subtree:true});
+    })();
+
+    // State
+    let state = {
+      admin:false,
+      hourStart: DEFAULT_HOUR_START,
+      hourEnd: DEFAULT_HOUR_END,
+      days: [],
+      bookings: {},
+      selectedDayIndex: 0,
+      usingCloud: false
+    };
+    const LS_KEY_BOOK='malia_bookings_v5';
+    const LS_KEY_SETTINGS='malia_settings_v5';
+    const LS_KEY_DAYS='malia_days_v5';
+    const LS_KEY_ADMIN='malia_admin_v2';
+
+    function loadLocal(){
+      try{
+        const b=JSON.parse(localStorage.getItem(LS_KEY_BOOK)||'{}');
+        const s=JSON.parse(localStorage.getItem(LS_KEY_SETTINGS)||'{}');
+        const d=JSON.parse(localStorage.getItem(LS_KEY_DAYS)||'[]');
+        state.bookings=b;
+        if(Number.isInteger(s.hourStart)) state.hourStart=s.hourStart;
+        if(Number.isInteger(s.hourEnd)) state.hourEnd=s.hourEnd;
+        if(Number.isInteger(s.selectedDayIndex)) state.selectedDayIndex=s.selectedDayIndex;
+        if(Array.isArray(d)) state.days=d;
+        if(localStorage.getItem(LS_KEY_ADMIN)==='1') state.admin=true;
+      }catch{}
+    }
+    function saveLocal(){
+      localStorage.setItem(LS_KEY_BOOK, JSON.stringify(state.bookings));
+      localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({hourStart:state.hourStart,hourEnd:state.hourEnd,selectedDayIndex:state.selectedDayIndex}));
+      localStorage.setItem(LS_KEY_DAYS, JSON.stringify(state.days));
+      localStorage.setItem(LS_KEY_ADMIN, state.admin?'1':'0');
+    }
+
+    // Firebase
+    let fb={app:null,db:null,auth:null,unsub:null};
+    async function initFirebaseCompat(){
+      try{
+        if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        fb.app=firebase.app(); fb.db=firebase.firestore(); fb.auth=firebase.auth();
+        fb.auth.onAuthStateChanged(()=>updateUIDOutput());
+        await fb.auth.signInAnonymously();
+        state.usingCloud=true; setSync('Cloud Sync aktiv. Daten werden geteilt');
+        subscribeSettingsCompat(); subscribeCloudCompat();
+      }catch(e){ console.error(e); state.usingCloud=false; setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Anonymous Auth und Domain', true); }
+    }
+    function subscribeSettingsCompat(){
+      if(!state.usingCloud) return;
+      const ref=fb.db.collection('settings').doc('config');
+      ref.onSnapshot(snap=>{
+        if(!snap.exists) return;
+        const cfg=snap.data(); let changed=false;
+        if(Array.isArray(cfg.days) && JSON.stringify(cfg.days)!==JSON.stringify(state.days)){ state.days=cfg.days; state.selectedDayIndex=0; changed=true; }
+        if(Number.isInteger(cfg.hourStart) && cfg.hourStart!==state.hourStart){ state.hourStart=cfg.hourStart; changed=true; }
+        if(Number.isInteger(cfg.hourEnd) && cfg.hourEnd!==state.hourEnd){ state.hourEnd=cfg.hourEnd; changed=true; }
+        if(changed){ saveLocal(); renderShell(); subscribeCloudCompat(); }
+      }, err=> setSync('Cloud Abo Fehler: '+err.message, true));
+    }
+    function syncSettingsCompat(){
+      if(!state.usingCloud) return Promise.resolve();
+      return fb.db.collection('settings').doc('config').set({
+        days: state.days, hourStart: state.hourStart, hourEnd: state.hourEnd,
+        updatedAt: new Date(), updatedBy: fb.auth?.currentUser?.uid || null
+      }, {merge:true}).catch(e=>{ console.error(e); setSync('Cloud Einstellungen konnten nicht gespeichert werden: '+(e.code||e.message), true); });
+    }
+    function subscribeCloudCompat(){
+      if(!state.days.length || !state.usingCloud) return;
+      const q=fb.db.collection('bookings').where('dateISO','in',state.days);
+      fb.unsub?.();
+      fb.unsub=q.onSnapshot(snap=>{
+        state.days.forEach(iso=> state.bookings[iso]=[]);
+        snap.forEach(doc=>{ const it={...doc.data(), id:doc.id}; if(state.days.includes(it.dateISO)){ state.bookings[it.dateISO]??=[]; state.bookings[it.dateISO].push(it); }});
+        renderShell(); saveLocal();
+      }, err=> setSync('Cloud Abo Fehler: '+err.message, true));
+    }
+    async function cloudAddCompat(item){
+      if(!state.usingCloud){ addLocal(item); return; }
+      try{ await fb.db.collection('bookings').add({...item, createdAt:new Date(), createdBy: fb.auth?.currentUser?.uid || null}); }
+      catch(e){ console.error(e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. '+(e.code||e.message), true); addLocal(item); }
+    }
+    async function cloudDeleteCompat(item){
+      if(!state.usingCloud){ deleteLocal(item); return; }
+      try{ if(item.id) await fb.db.collection('bookings').doc(item.id).delete(); }
+      catch(e){ console.error(e); setSync('Cloud Löschen fehlgeschlagen '+(e.code||e.message), true); }
+    }
+
+    // Login
+    function setAdmin(on){
+      state.admin=!!on; saveLocal();
+      qs('#btnLogin')?.classList.toggle('hidden', state.admin);
+      qs('#btnLogout')?.classList.toggle('hidden', !state.admin);
+      // Tabsichtbarkeit
+      qs('[data-tab="admin"]')?.classList.toggle('opacity-60', !state.admin);
+      qs('#btnBlock').disabled = !state.admin;
+      qs('#btnUnblock').disabled = !state.admin;
+      qs('#btnClearDay').disabled = !state.admin;
+      qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length===5);
+      qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length!==5);
+      updateUIDOutput();
+      renderShell();
+    }
+    function doLogin(pin){ if(pin!==ADMIN_PIN){ alert('Falsche PIN'); return; } setAdmin(true); closeDialog(qs('#dlgLogin')); if(state.days.length!==5) openDaysDialog(); }
+    function updateUIDOutput(){
+      const el=qs('#uidOut'); const btn=qs('#btnCopyUID'); const uid=fb?.auth?.currentUser?.uid || '';
+      if(!el) return; if(state.admin && uid){ el.textContent='UID '+uid; btn?.classList.remove('hidden'); } else { el.textContent='keine UID'; btn?.classList.add('hidden'); }
+    }
+
+    // Render Shell
+    function renderShell(){
+      renderDayStrip();
+      renderTimeline();
+      renderDaysPills();
+      qs('#hourStart').value = state.hourStart;
+      qs('#hourEnd').value = state.hourEnd;
+      const hasDays = state.days.length===5;
+      qs('#emptyMsg').classList.toggle('hidden', hasDays);
+    }
+
+    function renderDayStrip(){
+      const wrap=qs('#dayStrip'); wrap.innerHTML='';
+      if(!state.days.length){ wrap.innerHTML='<span class="text-xs text-slate-600 px-2 py-1">Bitte Tage festlegen</span>'; return; }
+      state.days.forEach((iso,i)=>{
+        const d=makeDateFromISO(iso);
+        const b=document.createElement('button');
+        b.className = 'px-3 py-2 rounded-full text-sm font-semibold transition ' + (i===state.selectedDayIndex ? 'bg-white shadow' : 'pill');
+        b.textContent=fmt.format(d);
+        b.addEventListener('click', ()=>{ state.selectedDayIndex=i; saveLocal(); renderTimeline(); });
+        wrap.appendChild(b);
+      });
+    }
+
+    function slotInfo(dateISO, hour){
+      const items=state.bookings[dateISO]||[];
+      const start=items.find(x=> x.hour===hour && x.kind!=='free');
+      if(start) return {kind:start.kind, item:start};
+      const prev=items.find(x=> x.hour===hour-1 && x.duration===2);
+      if(prev) return {kind:prev.kind, item:prev};
+      return {kind:'free'};
+    }
+    function isSlotFree(dateISO, hour){ return slotInfo(dateISO, hour).kind==='free'; }
+
+    function renderTimeline(){
+      const list=qs('#timeline'); list.innerHTML='';
+      if(state.days.length!==5){ return; }
+      const iso=state.days[state.selectedDayIndex];
+      for(let h=state.hourStart; h<state.hourEnd; h++){
+        const info=slotInfo(iso, h);
+        const li=document.createElement('li');
+        const btn=document.createElement('button');
+        btn.className='slot w-full glass border border-white/60 rounded-2xl shadow-md px-4 py-3 text-left';
+        btn.dataset.date=iso; btn.dataset.hour=String(h);
+        const left=`<div class="text-sm font-semibold">${hourLabel(h)}</div>`;
+        let right='';
+        if(info.kind==='free'){
+          right = `<div class="inline-flex items-center gap-2 text-emerald-700"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Frei</div>`;
+          btn.addEventListener('click', ()=> onFreeClick(iso,h));
+        }else if(info.kind==='visit'){
+          const it=info.item;
+          right = `<div class="flex flex-col"><div class="font-semibold text-emerald-800">Besuch ${escapeHTML(it.name)}</div><div class="text-xs text-slate-600">${it.duration}h${it.note?' · '+escapeHTML(it.note):''}</div></div>`;
+          if(state.admin) btn.addEventListener('click', ()=>{ if(confirm('Buchung löschen')) cloudDeleteCompat(it); });
+        }else{
+          const it=info.item;
+          right = `<div class="flex flex-col"><div class="font-semibold text-amber-800">Blockiert</div><div class="text-xs text-slate-600">${escapeHTML(it.note||'Termin')}</div></div>`;
+          if(state.admin) btn.addEventListener('click', ()=>{ if(confirm('Block aufheben')) cloudDeleteCompat(it); });
+        }
+        btn.innerHTML = `<div class="flex items-center justify-between">${left}<div class="ml-3"></div></div>`;
+        btn.querySelector('.ml-3').innerHTML=right;
+        li.appendChild(btn); list.appendChild(li);
+      }
+    }
+
+    function onFreeClick(dateISO, hour){
+      state._selected = {dateISO, hour};
+      if(state.admin && blockMode.active){
+        qs('#dlgBlockWhen').textContent = humanWhen(dateISO,hour);
+        qs('#inBlockReason').value='';
+        qs('#inBlockDuration').value='1';
+        openDialog(qs('#dlgBlock')); return;
+      }
+      qs('#dlgBookWhen').textContent = humanWhen(dateISO,hour);
+      qs('#inName').value=''; qs('#inContact').value='';
+      qs('#inDuration').value='1'; qs('#inNote').value='';
+      openDialog(qs('#dlgBook'));
+    }
+    function humanWhen(dateISO, hour){ const d=makeDateFromISO(dateISO); return `${fmt.format(d)} · ${hourLabel(hour)}`; }
+
+    async function onConfirmBooking(){
+      const sel=state._selected; if(!sel) return;
+      const name=qs('#inName').value.trim();
+      const contact=qs('#inContact').value.trim();
+      const duration=Number(qs('#inDuration').value);
+      const note=qs('#inNote').value.trim();
+      if(!name){ alert('Bitte Name eintragen'); return; }
+      if(duration!==1 && duration!==2){ alert('Dauer ungültig'); return; }
+      if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist nicht mehr frei'); return; }
+      if(duration===2){
+        if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb'); return; }
+        if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; }
+      }
+      await cloudAddCompat({kind:'visit', name, contact, note, dateISO: sel.dateISO, hour: sel.hour, duration});
+      closeDialog(qs('#dlgBook'));
+      celebrate();
+    }
+
+    // Blocken
+    const blockMode={active:false};
+    function beginBlock(){ if(!state.admin){ alert('Nur für Admin'); return; } blockMode.active=true; alert('Klicke auf einen freien Slot zum Blocken'); }
+    function beginUnblock(){ if(!state.admin){ alert('Nur für Admin'); return; } blockMode.active=false; alert('Klicke auf einen Block zum Aufheben'); }
+    async function onConfirmBlock(){
+      const sel=state._selected; if(!sel) return;
+      const note=qs('#inBlockReason').value.trim() || 'Termin';
+      const duration=Number(qs('#inBlockDuration').value);
+      if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist belegt'); return; }
+      if(duration===2){
+        if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb'); return; }
+        if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; }
+      }
+      await cloudAddCompat({kind:'block', note, dateISO: sel.dateISO, hour: sel.hour, duration});
+      closeDialog(qs('#dlgBlock')); blockMode.active=false;
+    }
+    function clearCurrentDay(){
+      if(!state.days.length) return;
+      const iso=state.days[state.selectedDayIndex];
+      const items=(state.bookings[iso]||[]).slice();
+      if(!items.length){ alert('Keine Einträge'); return; }
+      if(!confirm('Alle Einträge dieses Tages löschen')) return;
+      items.forEach(it=> cloudDeleteCompat(it));
+    }
+
+    // Tage
+    function openDaysDialog(){
+      const ids=['d1','d2','d3','d4','d5']; const vals=state.days.slice(0,5);
+      ids.forEach((id,i)=> qs('#'+id).value = vals[i] || '');
+      openDialog(qs('#dlgDays'));
+    }
+    async function saveDaysFromDialog(){
+      const ids=['d1','d2','d3','d4','d5'];
+      const arr=ids.map(id=> qs('#'+id).value).filter(Boolean);
+      if(arr.length!==5){ alert('Bitte genau fünf Tage wählen'); return; }
+      if(new Set(arr).size!==5){ alert('Tage dürfen sich nicht wiederholen'); return; }
+      state.days=arr; state.selectedDayIndex=0; saveLocal();
+      await syncSettingsCompat(); subscribeCloudCompat(); renderShell(); closeDialog(qs('#dlgDays'));
+    }
+    function renderDaysPills(){
+      const wrap=qs('#daysPills'); wrap.innerHTML='';
+      state.days.forEach(iso=>{ const d=makeDateFromISO(iso); const el=document.createElement('span'); el.className='px-3 py-1 rounded-full text-sm pill'; el.textContent=fmt.format(d); wrap.appendChild(el); });
+      qs('#btnDaysSetup').classList.toggle('hidden', !state.admin || state.days.length===5);
+      qs('#btnDaysEdit').classList.toggle('hidden', !state.admin || state.days.length!==5);
+    }
+
+    // Lokal
+    function addLocal(item){ state.bookings[item.dateISO]??=[]; state.bookings[item.dateISO].push({...item, id:Math.random().toString(36).slice(2)}); saveLocal(); renderTimeline(); }
+    function deleteLocal(item){ const arr=state.bookings[item.dateISO]||[]; const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr.splice(i,1); saveLocal(); renderTimeline(); }
+
+    // Celebration
+    function toast(msg='Danke für deinen Eintrag', ms=1800){ const t=qs('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), ms); }
+    function celebrate(){ toast(); if(window.matchMedia('(max-width: 767px)').matches){ startFireworks(1200); if(navigator.vibrate) navigator.vibrate(40); } }
+    function startFireworks(durationMs=1500){
+      const cv=qs('#fx'); const ctx=cv.getContext('2d'); const DPR=Math.max(1, window.devicePixelRatio||1);
+      function resize(){ cv.width=innerWidth*DPR; cv.height=innerHeight*DPR; } resize();
+      let parts=[]; const colors=['#ff7aa2','#ff9fb9','#ffd6e7','#ffffff'];
+      function burst(x,y){ for(let i=0;i<22;i++){ const a=Math.random()*Math.PI*2; const s=1.5+Math.random()*2.2; parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1.2,life:1,color:colors[(Math.random()*colors.length)|0]}); } }
+      for(let i=0;i<3;i++){ setTimeout(()=> burst((0.2+0.6*Math.random())*cv.width,(0.25+0.35*Math.random())*cv.height), i*260); }
+      const start=performance.now(); (function loop(t){
+        ctx.clearRect(0,0,cv.width,cv.height);
+        parts.forEach(p=>{ p.vy+=0.05; p.x+=p.vx*DPR*2; p.y+=p.vy*DPR*2; p.life-=0.015+Math.random()*0.01; ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,2.2*DPR,0,Math.PI*2); ctx.fill(); });
+        parts=parts.filter(p=>p.life>0 && p.y<cv.height+8*DPR);
+        if(t-start<durationMs || parts.length) requestAnimationFrame(loop); else ctx.clearRect(0,0,cv.width,cv.height);
+      })(start);
+      window.addEventListener('resize', resize, { once:true });
+    }
+
+    // Tabs
+    function activateTab(id){
+      ['plan','days','admin'].forEach(t=>{
+        qs('#tab-'+t).classList.toggle('hidden', t!==id);
+        const btn=[...document.querySelectorAll('.tab-btn')].find(b=>b.dataset.tab===t);
+        if(btn) btn.classList.toggle('tab-active', t===id);
+      });
+    }
+
+    // Events
+    function initUI(){
+      // Tabs
+      document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> activateTab(b.dataset.tab)));
+      // Login
+      qs('#btnLogin')?.addEventListener('click', ()=> openDialog(qs('#dlgLogin')));
+      qs('#btnCancelLogin')?.addEventListener('click', ()=> closeDialog(qs('#dlgLogin')));
+      qs('#btnLoginConfirm')?.addEventListener('click', ()=> doLogin(qs('#inPin').value.trim()));
+      qs('#inPin')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(e.target.value.trim()); });
+      qs('#btnLogout')?.addEventListener('click', ()=> setAdmin(false));
+
+      // Zeiten
+      qs('#hourStart').addEventListener('change', e=>{ state.hourStart=clampHour(Number(e.target.value)); saveLocal(); syncSettingsCompat(); renderTimeline(); });
+      qs('#hourEnd').addEventListener('change', e=>{ state.hourEnd=clampHour(Number(e.target.value)); saveLocal(); syncSettingsCompat(); renderTimeline(); });
+
+      // Share
+      qs('#btnShare').addEventListener('click', ()=>{
+        if(state.days.length!==5){ alert('Tage noch nicht festgelegt'); return; }
+        const u=new URL(location.href); u.searchParams.set('days', state.days.join(','));
+        navigator.clipboard?.writeText(u.toString()); alert('Link kopiert');
+      });
+
+      // Admin Buttons
+      qs('#btnBlock').addEventListener('click', beginBlock);
+      qs('#btnUnblock').addEventListener('click', beginUnblock);
+      qs('#btnCancelBlock').addEventListener('click', ()=> closeDialog(qs('#dlgBlock')));
+      qs('#btnConfirmBlock').addEventListener('click', onConfirmBlock);
+      qs('#btnClearDay').addEventListener('click', clearCurrentDay);
+      qs('#btnCopyUID')?.addEventListener('click', ()=>{
+        const uid=fb?.auth?.currentUser?.uid || ''; if(!uid){ alert('Keine UID'); return; } navigator.clipboard?.writeText(uid); alert('UID kopiert');
+      });
+
+      // Buchungsdialog
+      qs('#btnCancelBooking').addEventListener('click', ()=> closeDialog(qs('#dlgBook')));
+      qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
+
+      // Tage Dialog
+      qs('#btnDaysSetup').addEventListener('click', openDaysDialog);
+      qs('#btnDaysEdit').addEventListener('click', openDaysDialog);
+      qs('#btnCancelDays').addEventListener('click', ()=> closeDialog(qs('#dlgDays')));
+      qs('#btnSaveDays').addEventListener('click', saveDaysFromDialog);
+
+      // URL Tage übernehmen
+      const url=new URL(location.href); const p=url.searchParams.get('days');
+      if(p){ const arr=p.split(',').map(s=>s.trim()).filter(Boolean); if(arr.length===5){ state.days=arr; saveLocal(); } }
+
+      // Start mit Tab Plan
+      activateTab('plan');
+    }
+
+    // Start
+    window.addEventListener('DOMContentLoaded', ()=>{
+      loadLocal(); initUI(); renderShell(); if(state.admin) setAdmin(true);
+      initFirebaseCompat();
+    });
+  </script>
 </body>
 </html>
