@@ -259,6 +259,7 @@
     const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     const makeDateFromISO = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); };
     const escapeHTML = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));
+    const tsToDate = v => v && typeof v.toDate === 'function' ? v.toDate() : (v instanceof Date ? v : null);
 
     function setSync(msg, err=false){ const el=qs('#syncInfo'); if(!el) return; el.textContent=msg; el.style.color = err ? '#b91c1c' : ''; }
 
@@ -280,7 +281,8 @@
       bookings: {},
       selectedDayIndex: 0,
       usingCloud: false,
-      blockMode: false
+      blockMode: false,
+      lastSettingsChangeAt: null // schützt lokale Änderungen vor Überschreiben
     };
     const LS_KEY_BOOK='malia_bookings_v7';
     const LS_KEY_SETTINGS='malia_settings_v7';
@@ -300,11 +302,17 @@
         if(Number.isInteger(s.selectedDayIndex)) state.selectedDayIndex=s.selectedDayIndex;
         if(Array.isArray(d)) state.days=d;
         if(localStorage.getItem(LS_KEY_ADMIN)==='1') state.admin=true;
+        if(s.lastSettingsChangeAt) state.lastSettingsChangeAt = new Date(s.lastSettingsChangeAt);
       }catch{}
     }
     function saveLocal(){
       localStorage.setItem(LS_KEY_BOOK, JSON.stringify(state.bookings));
-      localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({hourStart:state.hourStart,hourEnd:state.hourEnd,selectedDayIndex:state.selectedDayIndex}));
+      localStorage.setItem(LS_KEY_SETTINGS, JSON.stringify({
+        hourStart:state.hourStart,
+        hourEnd:state.hourEnd,
+        selectedDayIndex:state.selectedDayIndex,
+        lastSettingsChangeAt: state.lastSettingsChangeAt ? state.lastSettingsChangeAt.toISOString() : null
+      }));
       localStorage.setItem(LS_KEY_DAYS, JSON.stringify(state.days));
       localStorage.setItem(LS_KEY_ADMIN, state.admin?'1':'0');
     }
@@ -326,7 +334,12 @@
       const ref=fb.db.collection('settings').doc('config');
       ref.onSnapshot(snap=>{
         if(!snap.exists) return;
-        const cfg=snap.data(); let changed=false;
+        const cfg=snap.data();
+        const remoteAt = tsToDate(cfg.updatedAt);
+        // Nur übernehmen wenn der Server neuer ist als unsere letzte lokale Änderung
+        if(state.lastSettingsChangeAt && remoteAt && remoteAt <= state.lastSettingsChangeAt) return;
+
+        let changed=false;
         if(Array.isArray(cfg.days) && JSON.stringify(cfg.days)!==JSON.stringify(state.days)){ state.days=cfg.days; state.selectedDayIndex=0; changed=true; }
         if(Number.isInteger(cfg.hourStart) && cfg.hourStart!==state.hourStart){ state.hourStart=cfg.hourStart; changed=true; }
         if(Number.isInteger(cfg.hourEnd) && cfg.hourEnd!==state.hourEnd){ state.hourEnd=cfg.hourEnd; changed=true; }
@@ -335,10 +348,19 @@
     }
     function syncSettingsCompat(){
       if(!state.usingCloud) return Promise.resolve();
+      const now = new Date();
+      state.lastSettingsChangeAt = now; // lokale Schutzmarke setzen
+      saveLocal();
       return fb.db.collection('settings').doc('config').set({
         days: state.days, hourStart: state.hourStart, hourEnd: state.hourEnd,
-        updatedAt: new Date(), updatedBy: fb.auth?.currentUser?.uid || null
-      }, {merge:true}).catch(e=>{ console.error(e); setSync('Cloud Einstellungen konnten nicht gespeichert werden: '+(e.code||e.message), true); });
+        updatedAt: now, updatedBy: fb.auth?.currentUser?.uid || null
+      }, {merge:true}).catch(e=>{
+        console.error(e);
+        setSync('Cloud Einstellungen konnten nicht gespeichert werden. Nutze lokalen Modus', true);
+        // auf lokalen Modus wechseln, damit nichts überschrieben wird
+        state.usingCloud=false;
+        fb.unsub?.();
+      });
     }
     function subscribeCloudCompat(){
       if(!state.days.length || !state.usingCloud) return;
@@ -353,12 +375,12 @@
     async function cloudAddCompat(item){
       if(!state.usingCloud){ addLocal(item); return; }
       try{ await fb.db.collection('bookings').add({...item, createdAt:new Date(), createdBy: fb.auth?.currentUser?.uid || null}); }
-      catch(e){ console.error(e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. '+(e.code||e.message), true); addLocal(item); }
+      catch(e){ console.error(e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert', true); addLocal(item); }
     }
     async function cloudDeleteCompat(item){
       if(!state.usingCloud){ deleteLocal(item); return; }
       try{ if(item.id) await fb.db.collection('bookings').doc(item.id).delete(); }
-      catch(e){ console.error(e); setSync('Cloud Löschen fehlgeschlagen '+(e.code||e.message), true); }
+      catch(e){ console.error(e); setSync('Cloud Löschen fehlgeschlagen', true); }
     }
 
     // Login
@@ -530,11 +552,11 @@
       const arr=ids.map(id=> qs('#'+id).value).filter(Boolean);
       if(arr.length!==5){ alert('Bitte genau fünf Tage wählen'); return; }
       if(new Set(arr).size!==5){ alert('Tage dürfen sich nicht wiederholen'); return; }
-      state.days=arr; state.selectedDayIndex=0; saveLocal();
-      // Erst lokal aktualisieren, dann Cloud versuchen
+      state.days=arr; state.selectedDayIndex=0;
+      state.lastSettingsChangeAt = new Date(); // lokale Änderung merken
+      saveLocal();
       renderShell();
-      try { await syncSettingsCompat(); subscribeCloudCompat(); }
-      catch {}
+      try { await syncSettingsCompat(); subscribeCloudCompat(); } catch {}
       closeDialog(qs('#dlgDays'));
     }
     function fillNext5(){
