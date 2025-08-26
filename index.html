@@ -230,7 +230,12 @@
     const hourLabel = h => pad2(h) + ':00';
     const clampHour = h => Number.isNaN(h) ? DEFAULT_HOUR_START : Math.max(0, Math.min(24, h));
     function makeDateFromISO(iso) { const [y,m,da] = iso.split('-').map(Number); return new Date(y, m-1, da); }
-    function escapeHTML(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]); }
+    function escapeHTML(s){
+      return String(s).replace(/[&<>"]/g, c => (
+        {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] || c
+      ));
+    }
+
 
     function setSync(msg, isError=false){
       const el = qs('#syncInfo'); if (!el) return;
