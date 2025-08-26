@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Malia Besuchsplaner</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">if (typeof window !== 'undefined') { try { window.openLoginUI = openLoginUI; } catch(e) {} try { window.doLogin = doLogin; } catch(e) {} }
+  </script>
   <meta name="color-scheme" content="light" />
   <style>
     html, body { height: 100%; }
@@ -28,20 +29,31 @@
   • Glas Design, große Touchflächen, klare Typo.
   Papa legt weiterhin einmalig fünf Tage fest. Papa PIN 1597.
   -->
+  <!-- Firebase Compat für maximale Gerätekompatibilität -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body class="min-h-full bg-gradient-to-br from-fuchsia-50 via-sky-50 to-blue-50 text-slate-900">
+  <!-- Feste Login Leiste ganz oben als Fallback -->
+  <div id="topLoginBar" class="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow p-2 flex items-center gap-2" style="display:none">
+    <span class="font-semibold">Papa Login</span>
+    <input id="pinTop" type="password" class="px-3 py-2 rounded-xl border border-slate-300 w-full max-w-xs" placeholder="PIN 1597" onkeydown="if(event.key==='Enter'){ try{ window.doLogin && window.doLogin(this.value.trim()); }catch(e){} }">
+    <button id="btnTopLogin" class="px-3 py-2 rounded-xl bg-emerald-600 text-white" onclick="(function(){var v=(document.getElementById('pinTop')||{}).value||'';v=v.trim();if(v==='1597'){try{localStorage.setItem('malia_admin_v1','1');}catch(e){}; if(window.state){window.state.admin=true;} else { window.state={admin:true}; } var el; el=document.getElementById('adminBar'); if(el) el.classList.remove('hidden'); el=document.getElementById('btnLogin'); if(el) el.classList.add('hidden'); el=document.getElementById('btnLogout'); if(el) el.classList.remove('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.add('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='none'; var hasFive = window.state && Array.isArray(window.state.days) && window.state.days.length===5; var b1=document.getElementById('btnDaysSetup'); if(b1) b1.classList.toggle('hidden', hasFive); var b2=document.getElementById('btnDaysEdit'); if(b2) b2.classList.toggle('hidden', !hasFive); } else { alert('Falsche PIN'); } })();">Login</button>
+    <button id="btnTopHide" class="px-3 py-2 rounded-xl pill" onclick="document.getElementById('topLoginBar').style.display='none'">Schließen</button>
+  </div>
   <div class="max-w-6xl mx-auto p-4 md:p-6">
     <!-- Header -->
-    <header class="mb-4 glass rounded-3xl shadow-lg border border-white/50">
+    <header class="mb-4 glass relative z-20 rounded-3xl shadow-lg border border-white/50">
       <div class="p-4 md:p-6">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
           <div>
             <h1 class="text-3xl md:text-4xl font-black tracking-tight">Malia Besuchsplaner</h1>
             <p id="syncInfo" class="text-sm text-slate-700 mt-1">Lokaler Modus aktiv</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button id="btnLogin" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 shadow">Papa Login</button>
-            <button id="btnLogout" class="px-4 py-2 rounded-2xl bg-slate-200 text-slate-700 hover:bg-slate-300 shadow hidden">Logout</button>
+          <div class="flex flex-wrap items-center gap-2 relative z-20 pointer-events-auto">
+            <button id="btnLogin" role="button" tabindex="0" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 shadow" onclick="(function(){var dlg=document.querySelector('#dlgLogin'); if(dlg){try{dlg.showModal();}catch(e){dlg.setAttribute('open',''); document.body.classList.add('modal-open');} setTimeout(function(){if(!dlg.hasAttribute('open')){var il=document.querySelector('#inlineLogin'); if(il) il.classList.remove('hidden');}},250);} else {var il=document.querySelector('#inlineLogin'); if(il) il.classList.remove('hidden');}})();">Papa Login</button>
+            <button id="btnLogout" class="px-4 py-2 rounded-2xl bg-slate-200 text-slate-700 hover:bg-slate-300 shadow hidden" onclick="(function(){try{localStorage.setItem('malia_admin_v1','0');}catch(e){}; if(window.state){window.state.admin=false;} var el; el=document.getElementById('adminBar'); if(el) el.classList.add('hidden'); el=document.getElementById('btnLogin'); if(el) el.classList.remove('hidden'); el=document.getElementById('btnLogout'); if(el) el.classList.add('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.remove('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='flex'; })();">Logout</button>
             <button id="btnShare" class="px-4 py-2 rounded-2xl bg-sky-600 text-white hover:bg-sky-700 shadow">Link kopieren</button>
           </div>
         </div>
@@ -76,17 +88,17 @@
               <button id="btnBlock" class="px-3 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700">Blocken</button>
               <button id="btnUnblock" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Block aufheben</button>
               <button id="btnClearDay" class="px-3 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Tag leeren</button>
-              <span id="adminBadge" class="ml-2 inline-flex items-center gap-1 text-sm text-slate-700">Admin aktiv<\/span> <span id="uidOut" class="ml-2 text-xs text-slate-500"></span>
+              <span id="adminBadge" class="ml-2 inline-flex items-center gap-1 text-sm text-slate-700">Admin aktiv<\/span> <span id="uidOut" class="ml-2 text-xs text-slate-500">keine UID</span> <button id="btnCopyUID" class="px-2 py-1 text-xs rounded-lg bg-slate-200 hover:bg-slate-300 hidden">UID kopieren</button>
             </div>
           </div>
         </details>
         <!-- Inline Login Fallback -->
-        <div id="inlineLogin" class="mt-3 hidden">
+        <div id="inlineLogin" class="mt-3">
           <div class="glass rounded-2xl p-3 border border-white/50">
             <div class="flex items-center gap-2">
-              <input id="inPinInline" type="password" class="px-3 py-2 rounded-xl border border-slate-300 w-full" placeholder="PIN 1597">
-              <button id="btnLoginInline" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button>
-              <button id="btnLoginInlineCancel" class="px-3 py-2 rounded-xl pill">Schließen</button>
+              <input id="inPinInline" type="password" class="px-3 py-2 rounded-xl border border-slate-300 w-full" placeholder="PIN 1597" onkeydown="if(event.key==='Enter'){ try{ window.doLogin && window.doLogin(this.value.trim()); } catch(e){} }">
+              <button id="btnLoginInline" class="px-3 py-2 rounded-xl bg-emerald-600 text-white" onclick="(function(){var v=(document.getElementById('inPinInline')||{}).value||'';v=v.trim();if(v==='1597'){try{localStorage.setItem('malia_admin_v1','1');}catch(e){}; if(window.state){window.state.admin=true;} else { window.state={admin:true}; } var el; el=document.getElementById('adminBar'); if(el) el.classList.remove('hidden'); el=document.getElementById('btnLogin'); if(el) el.classList.add('hidden'); el=document.getElementById('btnLogout'); if(el) el.classList.remove('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.add('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='none'; var hasFive = window.state && Array.isArray(window.state.days) && window.state.days.length===5; var b1=document.getElementById('btnDaysSetup'); if(b1) b1.classList.toggle('hidden', hasFive); var b2=document.getElementById('btnDaysEdit'); if(b2) b2.classList.toggle('hidden', !hasFive); } else { alert('Falsche PIN'); } })();">Login</button>
+              <button id="btnLoginInlineCancel" class="px-3 py-2 rounded-xl pill" onclick="document.getElementById('inlineLogin').classList.add('hidden')">Schließen</button> <button id="btnPromptLogin" class="px-3 py-2 text-xs rounded-xl pill" onclick="(function(){ var p = prompt('PIN'); if(p!=null){ try{ window.doLogin && window.doLogin(p.trim()); } catch(e){ alert('Login Fehler'); } } })();">Alternativ</button>
             </div>
           </div>
         </div>
@@ -107,7 +119,7 @@
 
     <!-- Mobile Kalender: horizontale Tag Streifen mit vertikalen Stundenlisten -->
     <section id="mobileCal" class="md:hidden">
-      <div id="mobileStrip" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth gap-4 -mx-4 px-1 py-1">
+      <div id="mobileStrip" class="flex overflow-x-auto z-0 snap-x snap-mandatory scroll-smooth gap-4 -mx-4 px-1 py-1">
         <!-- Day panes inserted here -->
       </div>
       <p class="text-center text-xs text-slate-600 mt-2">Wische seitlich durch die Tage. Scrolle im Tag nach unten für die Stunden</p>
@@ -189,8 +201,8 @@
       </label>
     </div>
     <div class="p-4 border-t flex justify-end gap-2">
-      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelLogin">Abbrechen</button>
-      <button type="button" id="btnLoginConfirm" class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Login</button>
+      <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelLogin" onclick="(function(){var d=document.getElementById('dlgLogin'); try{ d.close(); } catch(e){ d.removeAttribute('open'); document.body.classList.remove('modal-open'); }})();">Abbrechen</button>
+      <button type="button" id="btnLoginConfirm" class="px-3 py-2 rounded-xl bg-emerald-600 text-white" aria-label="Login" onclick="(function(){var v=(document.getElementById('inPin')||{}).value||'';v=v.trim();if(v==='1597'){try{localStorage.setItem('malia_admin_v1','1');}catch(e){}; if(window.state){window.state.admin=true;} else { window.state={admin:true}; } var el; el=document.getElementById('adminBar'); if(el) el.classList.remove('hidden'); el=document.getElementById('btnLogin'); if(el) el.classList.add('hidden'); el=document.getElementById('btnLogout'); if(el) el.classList.remove('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.add('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='none'; var dlg=document.getElementById('dlgLogin'); if(dlg){ try{ dlg.close(); } catch(_){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } } var hasFive = window.state && Array.isArray(window.state.days) && window.state.days.length===5; var b1=document.getElementById('btnDaysSetup'); if(b1) b1.classList.toggle('hidden', hasFive); var b2=document.getElementById('btnDaysEdit'); if(b2) b2.classList.toggle('hidden', !hasFive); } else { alert('Falsche PIN'); } })();">Login</button>
     </div>
   </dialog>
 
@@ -236,8 +248,11 @@
     };
 
     // --------- Utils ---------
-    function openDialog(dlg){ if(!dlg) return; try{ dlg.showModal(); } catch(e){ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
-    function closeDialog(dlg){ if(!dlg) return; try{ dlg.close(); } catch(e){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
+    function openDialog(dlg){ if(!dlg) return; try{ dlg.showModal(); } catch(e){ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } } catch(e){ dlg.setAttribute('open',''); document.body.classList.add('modal-open'); } }
+    function closeDialog(dlg){ if(!dlg) return; try{ dlg.close(); } catch(e){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } } catch(e){ dlg.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
+    function showInlineLogin(show){ const el = qs('#inlineLogin'); if (el) el.classList.toggle('hidden', !show); }
+    function openLoginUI(){ try{ const dlg = qs('#dlgLogin'); if (dlg) { const pin = qs('#inPin'); if(pin) pin.value=''; openDialog(dlg); setTimeout(()=>{ if (!dlg.hasAttribute('open')) showInlineLogin(true); }, 250); } else { showInlineLogin(true); } } catch(e){ console.warn('Dialog open failed', e); showInlineLogin(true); } }
+
     function doLogin(pin){
       if(pin === ADMIN_PIN){
         setAdmin(true);
@@ -319,6 +334,7 @@
     const LS_KEY_BOOK = 'malia_bookings_v4';
     const LS_KEY_SETTINGS = 'malia_settings_v4';
     const LS_KEY_DAYS = 'malia_days_v4';
+    const LS_KEY_ADMIN = 'malia_admin_v1';
 
     function loadLocal() {
       try {
@@ -330,6 +346,7 @@
         if (s.hourEnd != null) state.hourEnd = s.hourEnd;
         if (s.mobileDayIndex != null) state.mobileDayIndex = s.mobileDayIndex;
         if (Array.isArray(d)) state.days = d;
+        if (localStorage.getItem(LS_KEY_ADMIN) === '1') state.admin = true;
       } catch {}
     }
 
@@ -391,6 +408,13 @@
         if (changed) {
           saveLocal();
           updateDaysUI();
+      const copyBtn = qs('#btnCopyUID');
+      copyBtn?.addEventListener('click', () => {
+        const uid = fb?.auth?.currentUser?.uid || '';
+        if (!uid) { alert('Keine UID verfügbar. Prüfe Cloud Anmeldung'); return; }
+        navigator.clipboard?.writeText(uid);
+        alert('UID kopiert');
+      });
           subscribeCloud();
         }
       });
@@ -470,10 +494,12 @@
       });
 
       // Login
-      qs('#btnLogin').addEventListener('click', () => { qs('#inPin').value=''; const dlg = qs('#dlgLogin'); openDialog(dlg); setTimeout(()=>{ if (!dlg.hasAttribute('open')) qs('#inlineLogin').classList.remove('hidden'); }, 250); });
+      qs('#btnLogin')?.addEventListener('click', openLoginUI); openDialog(dlg); setTimeout(()=>{ if (!dlg.hasAttribute('open')) qs('#inlineLogin').classList.remove('hidden'); }, 250); });
       qs('#btnCancelLogin').addEventListener('click', () => { closeDialog(qs('#dlgLogin')); });
       qs('#btnLoginConfirm').addEventListener('click', () => { doLogin(qs('#inPin').value.trim()); });
-      qs('#btnLoginInline').addEventListener('click', () => { doLogin(qs('#inPinInline').value.trim()); });
+      qs('#btnLoginInline')?.addEventListener('click', () => { doLogin(qs('#inPinInline')?.value.trim() || ''); });
+      qs('#inPinInline')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(e.target.value.trim()); });
+      qs('#inPin')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(e.target.value.trim()); }); });
       qs('#btnLoginInlineCancel').addEventListener('click', () => { qs('#inlineLogin').classList.add('hidden'); });
       qs('#btnLogout').addEventListener('click', () => setAdmin(false));
 
@@ -510,13 +536,18 @@
 
     function setAdmin(on) {
       state.admin = !!on;
-      qs('#adminBar').classList.toggle('hidden', !state.admin);
-      qs('#btnLogin').classList.toggle('hidden', state.admin);
-      qs('#btnLogout').classList.toggle('hidden', !state.admin);
+      // persist
+      try { localStorage.setItem(LS_KEY_ADMIN, state.admin ? '1' : '0'); } catch {}
+      // toggle UI
+      qs('#adminBar')?.classList.toggle('hidden', !state.admin);
+      qs('#btnLogin')?.classList.toggle('hidden', state.admin);
+      qs('#btnLogout')?.classList.toggle('hidden', !state.admin);
       const canEdit = state.admin;
-      qs('#btnDaysSetup').classList.toggle('hidden', !canEdit || state.days.length === 5);
-      qs('#btnDaysEdit').classList.toggle('hidden', !canEdit || state.days.length !== 5);
-      updateUIDOutput();
+      qs('#btnDaysSetup')?.classList.toggle('hidden', !canEdit || state.days.length === 5);
+      qs('#btnDaysEdit')?.classList.toggle('hidden', !canEdit || state.days.length !== 5);
+      updateUIDOutput?.();
+      showInlineLogin?.(!state.admin);
+      if (typeof showTopLoginBar === 'function') showTopLoginBar(!state.admin);
       renderAll();
     }
 
@@ -561,9 +592,16 @@
 
     function updateUIDOutput() {
       const el = qs('#uidOut');
+      const btn = qs('#btnCopyUID');
       if (!el) return;
-      const uid = fb.auth?.currentUser?.uid || '';
-      el.textContent = state.admin && uid ? 'Firebase UID ' + uid : '';
+      const uid = fb?.auth?.currentUser?.uid || '';
+      if (state.admin && uid) {
+        el.textContent = 'UID ' + uid;
+        if (btn) btn.classList.remove('hidden');
+      } else {
+        el.textContent = 'keine UID. Cloud Anmeldung fehlt';
+        if (btn) btn.classList.add('hidden');
+      }
     }
 
     // --------- Render ---------
@@ -779,7 +817,10 @@
     // --------- Start ---------
     loadLocal();
     initControls();
+    // falls vorher schon eingeloggt, UI sofort aktualisieren
+    if (state.admin) setAdmin(true);
     renderAll();
+    showInlineLogin(!state.admin);
     initFirebaseIfConfigured();
     if (!state.days.length) qs('#setupNotice').classList.remove('hidden');
   </script>
@@ -801,5 +842,173 @@
     }
   }
   -->
+<script>
+  // Robust Click Bindings für Login Buttons und Enter Taste
+  document.addEventListener('click', function(e){
+    const t = e.target;
+    if (!t) return;
+    if (t.id === 'btnLoginConfirm') {
+      e.preventDefault();
+      try { doLogin(document.querySelector('#inPin')?.value.trim() || ''); } catch(err) { try { window.doLogin && window.doLogin(document.querySelector('#inPin')?.value.trim() || ''); } catch(_) {} }
+    }
+    if (t.id === 'btnLoginInline') {
+      e.preventDefault();
+      try { doLogin(document.querySelector('#inPinInline')?.value.trim() || ''); } catch(err) { try { window.doLogin && window.doLogin(document.querySelector('#inPinInline')?.value.trim() || ''); } catch(_) {} }
+    }
+  }, true);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') {
+      const dlg = document.querySelector('#dlgLogin');
+      const dlgOpen = dlg && dlg.hasAttribute('open');
+      const inlineLogin = document.querySelector('#inlineLogin');
+      const inlineVisible = inlineLogin && !inlineLogin.classList.contains('hidden');
+      if (dlgOpen || inlineVisible) {
+        e.preventDefault();
+        const pin = document.querySelector(dlgOpen ? '#inPin' : '#inPinInline')?.value.trim() || '';
+        try { doLogin(pin); } catch(err) { try { window.doLogin && window.doLogin(pin); } catch(_) {} }
+      }
+    }
+  }, true);
+</script>
+<script>
+  // Sichtbare Login Leiste über alles und robustes Patchen von setAdmin
+  (function(){
+    window.showTopLoginBar = function(show){ var el = document.getElementById('topLoginBar'); if(el) el.style.display = show ? 'flex' : 'none'; };
+    try {
+      if (typeof setAdmin === 'function') {
+        const orig = setAdmin;
+        window.setAdmin = function(on){
+          orig.call(this, on);
+          try { window.showTopLoginBar && window.showTopLoginBar(!window.state?.admin); } catch(e) {}
+        };
+      }
+    } catch(e) {}
+    // Nach dem Laden einmal anzeigen, falls nicht eingeloggt
+    try { if (typeof window.state !== 'undefined') window.showTopLoginBar(!window.state.admin); } catch(e) {}
+  })();
+</script>
+<script>(function(){try{if(localStorage.getItem('malia_admin_v1')==='1'){ if(!window.state) window.state={}; window.state.admin=true; var el; el=document.getElementById('adminBar'); if(el) el.classList.remove('hidden'); var bLogin=document.getElementById('btnLogin'); if(bLogin) bLogin.classList.add('hidden'); var bLogout=document.getElementById('btnLogout'); if(bLogout) bLogout.classList.remove('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.add('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='none'; var hasFive = window.state && Array.isArray(window.state.days) && window.state.days.length===5; var b1=document.getElementById('btnDaysSetup'); if(b1) b1.classList.toggle('hidden', hasFive); var b2=document.getElementById('btnDaysEdit'); if(b2) b2.classList.toggle('hidden', !hasFive); }}catch(e){}})();</script>
+<script>
+// Firebase Compat Overrides für breite Browser Unterstützung
+async function initFirebaseCompat() {
+  try {
+    const ok = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
+    if (!ok) { state.usingCloud = false; setSync('Lokaler Modus aktiv. Daten bleiben auf diesem Gerät'); return; }
+    if (!firebase.apps.length) { fb.app = firebase.initializeApp(firebaseConfig); } else { fb.app = firebase.app(); }
+    fb.db = firebase.firestore();
+    fb.auth = firebase.auth();
+    fb.auth.onAuthStateChanged(() => { updateUIDOutput?.(); });
+    try {
+      await fb.auth.signInAnonymously();
+      state.usingCloud = true;
+      setSync('Cloud Sync aktiv. Daten werden geteilt');
+      subscribeSettingsCompat();
+      subscribeCloudCompat();
+    } catch(e) {
+      console.error('Auth failed', e);
+      state.usingCloud = false;
+      setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Authentication Anonymous Login und autorisierte Domain', true);
+    }
+  } catch(e) {
+    console.error('Compat init error', e);
+    state.usingCloud = false;
+    setSync('Cloud Fehler. Es wird lokal gespeichert', true);
+  }
+}
+
+function subscribeSettingsCompat() {
+  if (!state.usingCloud) return;
+  const ref = fb.db.collection('settings').doc('config');
+  ref.onSnapshot(snap => {
+    if (!snap.exists) return;
+    const cfg = snap.data();
+    let changed = false;
+    if (Array.isArray(cfg.days) && JSON.stringify(cfg.days) !== JSON.stringify(state.days)) { state.days = cfg.days; state.mobileDayIndex = 0; changed = true; }
+    if (Number.isInteger(cfg.hourStart) && cfg.hourStart !== state.hourStart) { state.hourStart = cfg.hourStart; changed = true; }
+    if (Number.isInteger(cfg.hourEnd) && cfg.hourEnd !== state.hourEnd) { state.hourEnd = cfg.hourEnd; changed = true; }
+    if (changed) { saveLocal(); updateDaysUI(); subscribeCloudCompat(); }
+  }, err => { console.error('settings onSnapshot error', err); setSync('Cloud Abo Fehler: ' + err.message, true); });
+}
+
+async function syncSettingsCompat(){
+  if (!state.usingCloud) return;
+  try {
+    await fb.db.collection('settings').doc('config').set({
+      days: state.days,
+      hourStart: state.hourStart,
+      hourEnd: state.hourEnd,
+      updatedAt: new Date(),
+      updatedBy: fb.auth?.currentUser?.uid || null
+    }, { merge: true });
+    setSync('Cloud Sync aktiv. Daten werden geteilt');
+  } catch(e) {
+    console.error('Settings write failed', e);
+    setSync('Cloud Einstellungen konnten nicht gespeichert werden: ' + (e.code || e.message), true);
+  }
+}
+
+function subscribeCloudCompat() {
+  if (!state.usingCloud) return;
+  if (!state.days.length) return;
+  const q = fb.db.collection('bookings').where('dateISO', 'in', state.days);
+  fb.unsub?.();
+  fb.unsub = q.onSnapshot(snap => {
+    state.days.forEach(iso => state.bookings[iso] = []);
+    snap.forEach(doc => {
+      const it = { ...doc.data(), id: doc.id };
+      if (!state.days.includes(it.dateISO)) return;
+      state.bookings[it.dateISO] ??= [];
+      state.bookings[it.dateISO].push(it);
+    });
+    renderAll();
+    saveLocal();
+  }, err => { console.error('subscribeCloud error', err); setSync('Cloud Abo Fehler: ' + err.message, true); });
+}
+
+async function cloudAddCompat(item) {
+  if (!state.usingCloud) { addLocal(item); return; }
+  try { await fb.db.collection('bookings').add({ ...item, createdAt: new Date(), createdBy: fb.auth?.currentUser?.uid || null }); }
+  catch(e) { console.error('Cloud add failed', e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. ' + (e.code || e.message), true); addLocal(item); }
+}
+
+async function cloudDeleteCompat(item) {
+  if (!state.usingCloud) { deleteLocal(item); return; }
+  try { if (item.id) await fb.db.collection('bookings').doc(item.id).delete(); }
+  catch(e){ console.error('Cloud delete failed', e); setSync('Cloud Löschen fehlgeschlagen ' + (e.code || e.message), true); }
+}
+
+async function cloudDiagnosticsCompat(){
+  const results = [];
+  function log(msg){ results.push(msg); console.log('[Diag]', msg); }
+  try {
+    if(!state.usingCloud) { log('Cloud nicht aktiv. Prüfe firebaseConfig Werte'); setSync('Cloud nicht aktiv', true); alert(results.join('
+')); return; }
+    const uid = fb.auth?.currentUser?.uid; log('Auth UID ' + (uid || 'keine'));
+    if(!uid){ setSync('Nicht angemeldet. Prüfe Authentication Anonymous Login', true); }
+    try {
+      await fb.db.collection('settings').doc('config').set({ lastDiagAt: new Date(), lastDiagBy: uid || null }, { merge: true });
+      log('settings/config schreiben ok');
+      const iso = toISO(new Date());
+      await fb.db.collection('bookings').add({ kind:'visit', name:'Diag', contact:'', note:'', dateISO: iso, hour: 9, duration:1, createdAt:new Date(), createdBy: uid || null });
+      log('bookings schreiben ok');
+      setSync('Cloud Schreiben ok');
+    } catch(e){ log('Fehler beim Schreiben: ' + e.code + ' ' + e.message); setSync('Cloud Schreiben fehlgeschlagen ' + (e.code||''), true); }
+  } catch(err){ log('Allgemeiner Fehler: ' + err.message); setSync('Diagnose Fehler', true); }
+  alert(results.join('
+'));
+}
+
+// Alte Funktionsnamen überschreiben, damit der Rest des Codes funktioniert
+window.initFirebaseIfConfigured = initFirebaseCompat;
+window.subscribeSettings = subscribeSettingsCompat;
+window.syncSettings = syncSettingsCompat;
+window.subscribeCloud = subscribeCloudCompat;
+window.cloudAdd = cloudAddCompat;
+window.cloudDelete = cloudDeleteCompat;
+window.cloudDiagnostics = cloudDiagnosticsCompat;
+
+// Falls die erste Initialisierung noch nicht gegriffen hat, jetzt nachholen
+try { if (!state.usingCloud) { initFirebaseCompat(); } } catch(e) {}
+</script>
 </body>
 </html>
