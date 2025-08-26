@@ -40,8 +40,7 @@
     .no-scrollbar::-webkit-scrollbar{ display:none; }
     .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
-    /* Zustände der Slots */
-    .slot-free { }
+    /* Slot Zustände */
     .slot-booked {
       border-color: rgba(255,122,162,.5) !important;
       background: linear-gradient(135deg, rgba(255,245,248,.9), rgba(255,225,236,.9)) !important;
@@ -72,34 +71,18 @@
       pointer-events: none;
       transition: opacity .25s ease, transform .25s ease;
     }
-    #centerToast.show {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
+    #centerToast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
     /* Feuerwerk */
     #fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
     /* Wischhinweis */
-    #swipeHint {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 55;
-    }
+    #swipeHint { position: fixed; inset: 0; pointer-events: none; z-index: 55; }
     .edge {
-      position: absolute;
-      top: 50%;
-      width: 56px;
-      height: 56px;
-      margin-top: -28px;
-      display: grid;
-      place-items: center;
-      color: rgba(244,63,94,.85);
+      position: absolute; top: 50%; width: 56px; height: 56px; margin-top: -28px;
+      display: grid; place-items: center; color: rgba(244,63,94,.85);
       background: radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,.0));
-      border-radius: 999px;
-      transform: scale(.96);
-      opacity: 0;
+      border-radius: 999px; transform: scale(.96); opacity: 0;
       transition: opacity .35s ease, transform .35s ease;
       filter: drop-shadow(0 10px 22px rgba(0,0,0,.18));
     }
@@ -107,30 +90,18 @@
     .edge-left { left: 8px; }
     .edge-right { right: 8px; }
     .dots {
-      position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      background: rgba(255,255,255,.75);
-      backdrop-filter: blur(6px);
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.9);
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; background: rgba(255,255,255,.75); backdrop-filter: blur(6px);
+      padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.9);
       box-shadow: 0 10px 24px rgba(0,0,0,.12);
     }
-    .dot {
-      width: 8px; height: 8px; border-radius: 999px;
-      background: rgba(244,63,94,.25);
-      transition: transform .2s, background .2s;
-    }
+    .dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(244,63,94,.25); transition: transform .2s, background .2s; }
     .dot.active { transform: scale(1.35); background: rgba(244,63,94,.9); }
   </style>
 </head>
 <body class="min-h-full bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 text-slate-900">
 
-  <!-- Kopf mit Tageswahl -->
+  <!-- Kopf -->
   <header class="sticky top-0 z-40 border-b border-white/60 glass">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -148,11 +119,16 @@
     </div>
 
     <!-- Tagespills -->
-    <div class="max-w-3xl mx-auto px-3 pb-3">
+    <div class="max-w-3xl mx-auto px-3 pb-2">
       <div id="dayStrip" class="flex overflow-x-auto gap-2 no-scrollbar"></div>
     </div>
 
-    <!-- Admin Panel nur sichtbar wenn angemeldet -->
+    <!-- Sichtbarer CTA für Tage solange nicht vollständig -->
+    <div id="daysCta" class="max-w-3xl mx-auto px-3 pb-3 hidden">
+      <button id="btnOpenDays" class="px-3 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600">Tage festlegen</button>
+    </div>
+
+    <!-- Admin Panel -->
     <div id="adminPanel" class="max-w-3xl mx-auto px-3 pb-3 hidden">
       <div class="glass rounded-2xl border border-white/60 shadow-lg p-3">
         <div class="flex flex-wrap items-center gap-2">
@@ -185,7 +161,7 @@
   <div id="centerToast">Danke für deinen Eintrag</div>
   <canvas id="fx"></canvas>
 
-  <!-- Wischhinweis mit Pfeilen und Punktanzeige -->
+  <!-- Wischhinweis -->
   <div id="swipeHint" aria-hidden="true">
     <div class="edge edge-left">‹</div>
     <div class="edge edge-right">›</div>
@@ -246,7 +222,7 @@
     </div>
   </dialog>
 
-  <!-- Tage Dialog separat -->
+  <!-- Tage Dialog -->
   <dialog id="dlgDays" class="rounded-2xl p-0 w-full max-w-lg">
     <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
       <h2 class="font-semibold">Fünf Tage festlegen</h2>
@@ -258,6 +234,9 @@
       <label class="block"><span class="text-sm">Tag 3</span><input id="d3" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
       <label class="block"><span class="text-sm">Tag 4</span><input id="d4" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
       <label class="block sm:col-span-2"><span class="text-sm">Tag 5</span><input id="d5" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300"></label>
+    </div>
+    <div class="px-4 pb-2">
+      <button id="btnFillNext5" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-sm">Nächste fünf Tage automatisch füllen</button>
     </div>
     <div class="p-4 border-t flex justify-end gap-2">
       <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelDays">Abbrechen</button>
@@ -277,6 +256,7 @@
     const pad2 = n => String(n).padStart(2,'0');
     const hourLabel = h => pad2(h) + ':00';
     const clampHour = h => Number.isNaN(h) ? DEFAULT_HOUR_START : Math.max(0, Math.min(24, h));
+    const toISO = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     const makeDateFromISO = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); };
     const escapeHTML = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));
 
@@ -307,6 +287,7 @@
     const LS_KEY_DAYS='malia_days_v7';
     const LS_KEY_ADMIN='malia_admin_v4';
     const LS_KEY_HINT='malia_swipe_hint_seen_v1';
+    let pendingOpenDays = false;
 
     function loadLocal(){
       try{
@@ -391,7 +372,12 @@
       updateUIDOutput();
       renderShell();
     }
-    function doLogin(pin){ if(pin!==ADMIN_PIN){ alert('Falsche PIN'); return; } setAdmin(true); closeDialog(qs('#dlgLogin')); if(state.days.length!==5) openDaysDialog(); }
+    function doLogin(pin){
+      if(pin!==ADMIN_PIN){ alert('Falsche PIN'); return; }
+      setAdmin(true);
+      closeDialog(qs('#dlgLogin'));
+      if (pendingOpenDays || state.days.length!==5) { pendingOpenDays = false; openDaysDialog(); }
+    }
     function updateUIDOutput(){
       const el=qs('#uidOut'); const btn=qs('#btnCopyUID'); const uid=fb?.auth?.currentUser?.uid || '';
       if(!el) return; if(state.admin && uid){ el.textContent='UID '+uid; btn?.classList.remove('hidden'); } else { el.textContent='keine UID'; btn?.classList.add('hidden'); }
@@ -407,6 +393,7 @@
       const hasDays = state.days.length===5;
       qs('#emptyMsg').classList.toggle('hidden', hasDays);
       qs('#setupNotice').classList.toggle('hidden', hasDays);
+      qs('#daysCta').classList.toggle('hidden', hasDays);
       showSwipeHintIfNeeded();
     }
 
@@ -454,7 +441,8 @@
         const btn=document.createElement('button');
         btn.className='slot w-full glass border border-white/60 rounded-2xl px-4 py-3 text-left';
         btn.dataset.date=iso; btn.dataset.hour=String(h);
-        btn.classList.add(info.kind==='free' ? 'slot-free' : info.kind==='visit' ? 'slot-booked' : 'slot-blocked');
+        if(info.kind==='visit') btn.classList.add('slot-booked');
+        if(info.kind==='block') btn.classList.add('slot-blocked');
 
         const left=`<div class="text-sm font-semibold">${hourLabel(h)}</div>`;
         let right='';
@@ -477,20 +465,12 @@
     }
 
     function bindSlotInteractions(btn, iso, hour){
-      // Normales Tippen
       btn.addEventListener('click', ()=>{
-        if(state.admin && state.blockMode){
-          quickBlock(iso, hour);
-          return;
-        }
+        if(state.admin && state.blockMode){ quickBlock(iso, hour); return; }
         onFreeClick(iso, hour);
       });
-      // Lang drücken für Schnellblock
       let pressTimer;
-      const startPress = () => {
-        if(!state.admin) return;
-        pressTimer = setTimeout(()=> quickBlock(iso, hour), 500);
-      };
+      const startPress = () => { if(!state.admin) return; pressTimer = setTimeout(()=> quickBlock(iso, hour), 500); };
       const cancelPress = () => { clearTimeout(pressTimer); };
       btn.addEventListener('touchstart', startPress, {passive:true});
       btn.addEventListener('touchend', cancelPress);
@@ -551,7 +531,19 @@
       if(arr.length!==5){ alert('Bitte genau fünf Tage wählen'); return; }
       if(new Set(arr).size!==5){ alert('Tage dürfen sich nicht wiederholen'); return; }
       state.days=arr; state.selectedDayIndex=0; saveLocal();
-      await syncSettingsCompat(); subscribeCloudCompat(); renderShell(); closeDialog(qs('#dlgDays'));
+      // Erst lokal aktualisieren, dann Cloud versuchen
+      renderShell();
+      try { await syncSettingsCompat(); subscribeCloudCompat(); }
+      catch {}
+      closeDialog(qs('#dlgDays'));
+    }
+    function fillNext5(){
+      const today = new Date();
+      const ids=['d1','d2','d3','d4','d5'];
+      for(let i=0;i<5;i++){
+        const d = new Date(today); d.setDate(today.getDate()+i);
+        qs('#'+ids[i]).value = toISO(d);
+      }
     }
 
     // Lokal Fallback
@@ -578,7 +570,7 @@
       window.addEventListener('resize', resize, { once:true });
     }
 
-    // Swipe Navigation und Hinweise
+    // Swipe und Hinweise
     function initSwipe(){
       const el = qs('#appMain');
       let sx=0, sy=0, st=0;
@@ -594,13 +586,11 @@
           hideSwipeHint();
         }
       });
-      // Pfeiltasten auf Desktop
       window.addEventListener('keydown', e=>{
         if(e.key==='ArrowRight') { setDayIndex(state.selectedDayIndex+1); hideSwipeHint(); }
         if(e.key==='ArrowLeft') { setDayIndex(state.selectedDayIndex-1); hideSwipeHint(); }
       });
     }
-
     function renderDots(){
       const dots = qs('#pageDots'); dots.innerHTML='';
       const n = state.days.length===5 ? 5 : 0;
@@ -610,7 +600,6 @@
         dots.appendChild(d);
       }
     }
-
     function showSwipeHintIfNeeded(){
       const seen = localStorage.getItem(LS_KEY_HINT)==='1';
       const hint = qs('#swipeHint');
@@ -623,12 +612,18 @@
 
     // Events
     function initUI(){
-      // Login
+      // Admin Login
       qs('#btnLogin')?.addEventListener('click', ()=> openDialog(qs('#dlgLogin')));
       qs('#btnCancelLogin')?.addEventListener('click', ()=> closeDialog(qs('#dlgLogin')));
       qs('#btnLoginConfirm')?.addEventListener('click', ()=> doLogin(qs('#inPin').value.trim()));
       qs('#inPin')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(e.target.value.trim()); });
       qs('#btnLogout')?.addEventListener('click', ()=> setAdmin(false));
+
+      // Tage CTA sichtbar für alle
+      qs('#btnOpenDays')?.addEventListener('click', ()=>{
+        if(state.admin) openDaysDialog();
+        else { pendingOpenDays = true; openDialog(qs('#dlgLogin')); }
+      });
 
       // Zeiten
       qs('#hourStart').addEventListener('change', e=>{ state.hourStart=clampHour(Number(e.target.value)); saveLocal(); syncSettingsCompat(); renderTimeline(); });
@@ -647,7 +642,7 @@
         const uid=fb?.auth?.currentUser?.uid || ''; if(!uid){ alert('Keine UID'); return; } navigator.clipboard?.writeText(uid); alert('UID kopiert');
       });
 
-      // Buchungsdialog
+      // Buchung
       qs('#btnCancelBooking').addEventListener('click', ()=> closeDialog(qs('#dlgBook')));
       qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
 
@@ -656,6 +651,7 @@
       qs('#btnDaysEdit').addEventListener('click', openDaysDialog);
       qs('#btnCancelDays').addEventListener('click', ()=> closeDialog(qs('#dlgDays')));
       qs('#btnSaveDays').addEventListener('click', saveDaysFromDialog);
+      qs('#btnFillNext5').addEventListener('click', fillNext5);
 
       // URL Tage übernehmen
       const url=new URL(location.href); const p=url.searchParams.get('days');
