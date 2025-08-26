@@ -40,7 +40,6 @@
     .no-scrollbar::-webkit-scrollbar{ display:none; }
     .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
-    /* Slot Zustände */
     .slot-booked {
       border-color: rgba(255,122,162,.5) !important;
       background: linear-gradient(135deg, rgba(255,245,248,.9), rgba(255,225,236,.9)) !important;
@@ -53,7 +52,6 @@
       opacity: .85;
     }
 
-    /* Mittiger Danke Hinweis */
     #centerToast {
       position: fixed;
       left: 50%;
@@ -73,10 +71,8 @@
     }
     #centerToast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-    /* Feuerwerk */
     #fx { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
 
-    /* Wischhinweis */
     #swipeHint { position: fixed; inset: 0; pointer-events: none; z-index: 55; }
     .edge {
       position: absolute; top: 50%; width: 56px; height: 56px; margin-top: -28px;
@@ -101,7 +97,6 @@
 </head>
 <body class="min-h-full bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 text-slate-900">
 
-  <!-- Kopf -->
   <header class="sticky top-0 z-40 border-b border-white/60 glass">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -118,17 +113,14 @@
       </div>
     </div>
 
-    <!-- Tagespills -->
     <div class="max-w-3xl mx-auto px-3 pb-2">
       <div id="dayStrip" class="flex overflow-x-auto gap-2 no-scrollbar"></div>
     </div>
 
-    <!-- Sichtbarer CTA für Tage solange nicht vollständig -->
     <div id="daysCta" class="max-w-3xl mx-auto px-3 pb-3 hidden">
       <button id="btnOpenDays" class="px-3 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600">Tage festlegen</button>
     </div>
 
-    <!-- Admin Panel -->
     <div id="adminPanel" class="max-w-3xl mx-auto px-3 pb-3 hidden">
       <div class="glass rounded-2xl border border-white/60 shadow-lg p-3">
         <div class="flex flex-wrap items-center gap-2">
@@ -146,29 +138,24 @@
     </div>
   </header>
 
-  <!-- Hinweis wenn Tage fehlen -->
   <section id="setupNotice" class="max-w-3xl mx-auto glass rounded-2xl border border-white/60 shadow p-4 mt-3 hidden">
     <p class="text-sm text-slate-700">Bitte Admin legt fünf Tage fest</p>
   </section>
 
-  <!-- Inhalt -->
   <main id="appMain" class="max-w-3xl mx-auto px-3 pb-12 pt-3 select-none">
     <ul id="timeline" class="space-y-3"></ul>
     <p id="emptyMsg" class="mt-6 text-center text-sm text-slate-600 hidden">Noch keine Tage gewählt</p>
   </main>
 
-  <!-- Mittiger Danke Hinweis und Feuerwerk -->
   <div id="centerToast">Danke für deinen Eintrag</div>
   <canvas id="fx"></canvas>
 
-  <!-- Wischhinweis -->
   <div id="swipeHint" aria-hidden="true">
     <div class="edge edge-left">‹</div>
     <div class="edge edge-right">›</div>
     <div class="dots" id="pageDots"></div>
   </div>
 
-  <!-- Dialoge -->
   <dialog id="dlgBook" class="rounded-2xl p-0 w-full max-w-md">
     <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
       <h2 class="font-semibold">Slot buchen</h2>
@@ -222,7 +209,6 @@
     </div>
   </dialog>
 
-  <!-- Tage Dialog -->
   <dialog id="dlgDays" class="rounded-2xl p-0 w-full max-w-lg">
     <div class="p-4 border-b bg-rose-50 rounded-t-2xl">
       <h2 class="font-semibold">Fünf Tage festlegen</h2>
@@ -245,12 +231,10 @@
   </dialog>
 
   <script>
-    // Konfiguration
     const ADMIN_PIN = '1597';
     const DEFAULT_HOUR_START = 9;
     const DEFAULT_HOUR_END = 20;
 
-    // Utils
     const qs = s => document.querySelector(s);
     const fmt = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
     const pad2 = n => String(n).padStart(2,'0');
@@ -265,14 +249,12 @@
 
     function openDialog(d){ try{ d.showModal(); } catch{ d.setAttribute('open',''); document.body.classList.add('modal-open'); } }
     function closeDialog(d){ try{ d.close(); } catch{ d.removeAttribute('open'); document.body.classList.remove('modal-open'); } }
-    // Dialog Polyfill
     (function(){ const t=document.createElement('dialog'); const ok=!!window.HTMLDialogElement && typeof t.showModal==='function';
       if(ok) return; const m={show(){this.setAttribute('open','');},showModal(){this.setAttribute('open','');document.body.classList.add('modal-open');},close(){this.removeAttribute('open');document.body.classList.remove('modal-open');}};
       document.querySelectorAll('dialog').forEach(d=>Object.assign(d,m));
       new MutationObserver(()=>{document.querySelectorAll('dialog').forEach(d=>{if(!('showModal'in d))Object.assign(d,m);});}).observe(document.documentElement,{childList:true,subtree:true});
     })();
 
-    // State
     let state = {
       admin:false,
       hourStart: DEFAULT_HOUR_START,
@@ -282,7 +264,7 @@
       selectedDayIndex: 0,
       usingCloud: false,
       blockMode: false,
-      lastSettingsChangeAt: null // schützt lokale Änderungen vor Überschreiben
+      lastSettingsChangeAt: null
     };
     const LS_KEY_BOOK='malia_bookings_v7';
     const LS_KEY_SETTINGS='malia_settings_v7';
@@ -317,7 +299,6 @@
       localStorage.setItem(LS_KEY_ADMIN, state.admin?'1':'0');
     }
 
-    // Firebase
     let fb={app:null,db:null,auth:null,unsub:null};
     async function initFirebaseCompat(){
       try{
@@ -336,7 +317,6 @@
         if(!snap.exists) return;
         const cfg=snap.data();
         const remoteAt = tsToDate(cfg.updatedAt);
-        // Nur übernehmen wenn der Server neuer ist als unsere letzte lokale Änderung
         if(state.lastSettingsChangeAt && remoteAt && remoteAt <= state.lastSettingsChangeAt) return;
 
         let changed=false;
@@ -349,7 +329,7 @@
     function syncSettingsCompat(){
       if(!state.usingCloud) return Promise.resolve();
       const now = new Date();
-      state.lastSettingsChangeAt = now; // lokale Schutzmarke setzen
+      state.lastSettingsChangeAt = now;
       saveLocal();
       return fb.db.collection('settings').doc('config').set({
         days: state.days, hourStart: state.hourStart, hourEnd: state.hourEnd,
@@ -357,7 +337,6 @@
       }, {merge:true}).catch(e=>{
         console.error(e);
         setSync('Cloud Einstellungen konnten nicht gespeichert werden. Nutze lokalen Modus', true);
-        // auf lokalen Modus wechseln, damit nichts überschrieben wird
         state.usingCloud=false;
         fb.unsub?.();
       });
@@ -383,7 +362,6 @@
       catch(e){ console.error(e); setSync('Cloud Löschen fehlgeschlagen', true); }
     }
 
-    // Login
     function setAdmin(on){
       state.admin=!!on; saveLocal();
       qs('#btnLogin')?.classList.toggle('hidden', state.admin);
@@ -405,7 +383,6 @@
       if(!el) return; if(state.admin && uid){ el.textContent='UID '+uid; btn?.classList.remove('hidden'); } else { el.textContent='keine UID'; btn?.classList.add('hidden'); }
     }
 
-    // Render
     function renderShell(){
       renderDayStrip();
       renderTimeline();
@@ -532,6 +509,20 @@
       celebrate();
     }
 
+    async function onConfirmBlock(){
+      const sel = state._selected;
+      if(!sel){ alert('Kein Slot gewählt'); closeDialog(qs('#dlgBlock')); return; }
+      const note = qs('#inBlockReason').value.trim() || 'Blockiert';
+      const duration = Number(qs('#inBlockDuration').value) || 1;
+      if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist belegt'); return; }
+      if(duration===2){
+        if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb'); return; }
+        if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; }
+      }
+      await cloudAddCompat({kind:'block', note, dateISO: sel.dateISO, hour: sel.hour, duration});
+      closeDialog(qs('#dlgBlock'));
+    }
+
     function clearCurrentDay(){
       if(!state.days.length) return;
       const iso=state.days[state.selectedDayIndex];
@@ -541,7 +532,6 @@
       items.forEach(it=> cloudDeleteCompat(it));
     }
 
-    // Tage
     function openDaysDialog(){
       const ids=['d1','d2','d3','d4','d5']; const vals=state.days.slice(0,5);
       ids.forEach((id,i)=> qs('#'+id).value = vals[i] || '');
@@ -553,7 +543,7 @@
       if(arr.length!==5){ alert('Bitte genau fünf Tage wählen'); return; }
       if(new Set(arr).size!==5){ alert('Tage dürfen sich nicht wiederholen'); return; }
       state.days=arr; state.selectedDayIndex=0;
-      state.lastSettingsChangeAt = new Date(); // lokale Änderung merken
+      state.lastSettingsChangeAt = new Date();
       saveLocal();
       renderShell();
       try { await syncSettingsCompat(); subscribeCloudCompat(); } catch {}
@@ -568,11 +558,9 @@
       }
     }
 
-    // Lokal Fallback
     function addLocal(item){ state.bookings[item.dateISO]??=[]; state.bookings[item.dateISO].push({...item, id:Math.random().toString(36).slice(2)}); saveLocal(); renderTimeline(); }
     function deleteLocal(item){ const arr=state.bookings[item.dateISO]||[]; const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr.splice(i,1); saveLocal(); renderTimeline(); }
 
-    // Celebration
     function centerToast(msg='Danke für deinen Eintrag', ms=1600){
       const t=qs('#centerToast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=> t.classList.remove('show'), ms);
     }
@@ -592,7 +580,6 @@
       window.addEventListener('resize', resize, { once:true });
     }
 
-    // Swipe und Hinweise
     function initSwipe(){
       const el = qs('#appMain');
       let sx=0, sy=0, st=0;
@@ -632,26 +619,21 @@
     }
     function hideSwipeHint(){ localStorage.setItem(LS_KEY_HINT,'1'); qs('#swipeHint')?.classList.remove('show'); }
 
-    // Events
     function initUI(){
-      // Admin Login
       qs('#btnLogin')?.addEventListener('click', ()=> openDialog(qs('#dlgLogin')));
       qs('#btnCancelLogin')?.addEventListener('click', ()=> closeDialog(qs('#dlgLogin')));
       qs('#btnLoginConfirm')?.addEventListener('click', ()=> doLogin(qs('#inPin').value.trim()));
       qs('#inPin')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(e.target.value.trim()); });
       qs('#btnLogout')?.addEventListener('click', ()=> setAdmin(false));
 
-      // Tage CTA sichtbar für alle
       qs('#btnOpenDays')?.addEventListener('click', ()=>{
         if(state.admin) openDaysDialog();
         else { pendingOpenDays = true; openDialog(qs('#dlgLogin')); }
       });
 
-      // Zeiten
       qs('#hourStart').addEventListener('change', e=>{ state.hourStart=clampHour(Number(e.target.value)); saveLocal(); syncSettingsCompat(); renderTimeline(); });
       qs('#hourEnd').addEventListener('change', e=>{ state.hourEnd=clampHour(Number(e.target.value)); saveLocal(); syncSettingsCompat(); renderTimeline(); });
 
-      // Admin
       qs('#btnBlockToggle').addEventListener('click', ()=>{
         state.blockMode = !state.blockMode;
         qs('#btnBlockToggle').classList.toggle('bg-rose-700', state.blockMode);
@@ -664,25 +646,21 @@
         const uid=fb?.auth?.currentUser?.uid || ''; if(!uid){ alert('Keine UID'); return; } navigator.clipboard?.writeText(uid); alert('UID kopiert');
       });
 
-      // Buchung
       qs('#btnCancelBooking').addEventListener('click', ()=> closeDialog(qs('#dlgBook')));
       qs('#btnConfirmBooking').addEventListener('click', onConfirmBooking);
 
-      // Tage Dialog
       qs('#btnDaysSetup').addEventListener('click', openDaysDialog);
       qs('#btnDaysEdit').addEventListener('click', openDaysDialog);
       qs('#btnCancelDays').addEventListener('click', ()=> closeDialog(qs('#dlgDays')));
       qs('#btnSaveDays').addEventListener('click', saveDaysFromDialog);
       qs('#btnFillNext5').addEventListener('click', fillNext5);
 
-      // URL Tage übernehmen
       const url=new URL(location.href); const p=url.searchParams.get('days');
       if(p){ const arr=p.split(',').map(s=>s.trim()).filter(Boolean); if(arr.length===5){ state.days=arr; saveLocal(); } }
 
       initSwipe();
     }
 
-    // Start
     window.addEventListener('DOMContentLoaded', ()=>{
       loadLocal(); initUI(); renderShell(); if(state.admin) setAdmin(true);
       initFirebaseCompat();
