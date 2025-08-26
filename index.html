@@ -162,13 +162,19 @@
       <p id="dlgBookWhen" class="text-sm text-slate-600"></p>
     </div>
     <div class="p-4 space-y-3">
-      <label class="block"><span class="text-sm">Name</span><input id="inName" required class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Dein Name"></label>
-      <label class="block"><span class="text-sm">Dauer</span>
-        <select id="inDuration" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300">
-          <option value="1">1 Stunde</option><option value="2">2 Stunden</option>
-        </select>
+      <label class="block">
+        <span class="text-sm">Name</span>
+        <input id="inName" required class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Dein Name">
       </label>
-      <label class="block"><span class="text-sm">Notiz optional</span><textarea id="inNote" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" rows="2" placeholder="Kurze Notiz"></textarea></label>
+
+      <div class="text-sm text-slate-700">
+        Aufenthalt 30 Min. Die Stunde wird reserviert
+      </div>
+
+      <label class="block">
+        <span class="text-sm">Notiz optional</span>
+        <textarea id="inNote" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" rows="2" placeholder="Kurze Notiz"></textarea>
+      </label>
     </div>
     <div class="p-4 border-t flex justify-end gap-2">
       <button type="button" class="px-3 py-2 rounded-xl pill" id="btnCancelBooking">Abbrechen</button>
@@ -450,7 +456,8 @@
           bindSlotInteractions(btn, iso, h);
         }else if(info.kind==='visit'){
           const it=info.item;
-          right = `<div class="flex flex-col"><div class="font-semibold text-emerald-800">Besuch ${escapeHTML(it.name)}</div><div class="text-xs text-slate-600">${it.duration}h${it.note?' · '+escapeHTML(it.note):''}</div></div>`;
+          const labelDur = it.stayMin ? `${it.stayMin} Min` : (it.duration===2 ? '2h' : '1h');
+          right = `<div class="flex flex-col"><div class="font-semibold text-emerald-800">Besuch ${escapeHTML(it.name)}</div><div class="text-xs text-slate-600">${labelDur}${it.note?' · '+escapeHTML(it.note):''}</div></div>`;
           if(state.admin) btn.addEventListener('click', ()=>{ if(confirm('Buchung löschen')) cloudDeleteCompat(it); });
         }else{
           const it=info.item;
@@ -487,7 +494,7 @@
     function onFreeClick(dateISO, hour){
       state._selected = {dateISO, hour};
       qs('#dlgBookWhen').textContent = humanWhen(dateISO,hour);
-      qs('#inName').value=''; qs('#inDuration').value='1'; qs('#inNote').value='';
+      qs('#inName').value=''; qs('#inNote').value='';
       openDialog(qs('#dlgBook'));
     }
     function humanWhen(dateISO, hour){ const d=makeDateFromISO(dateISO); return `${fmt.format(d)} · ${hourLabel(hour)}`; }
@@ -495,16 +502,12 @@
     async function onConfirmBooking(){
       const sel=state._selected; if(!sel) return;
       const name=qs('#inName').value.trim();
-      const duration=Number(qs('#inDuration').value);
       const note=qs('#inNote').value.trim();
+      const stayMin = 30;        // gewünschte Aufenthaltsdauer
+      const duration = 1;        // blockierte Rasterdauer in Stunden
       if(!name){ alert('Bitte Name eintragen'); return; }
-      if(duration!==1 && duration!==2){ alert('Dauer ungültig'); return; }
       if(!isSlotFree(sel.dateISO, sel.hour)){ alert('Slot ist nicht mehr frei'); return; }
-      if(duration===2){
-        if(sel.hour+1>=state.hourEnd){ alert('Zweite Stunde liegt außerhalb'); return; }
-        if(!isSlotFree(sel.dateISO, sel.hour+1)){ alert('Die zweite Stunde ist belegt'); return; }
-      }
-      await cloudAddCompat({kind:'visit', name, note, dateISO: sel.dateISO, hour: sel.hour, duration});
+      await cloudAddCompat({kind:'visit', name, note, stayMin, dateISO: sel.dateISO, hour: sel.hour, duration});
       closeDialog(qs('#dlgBook'));
       celebrate();
     }
