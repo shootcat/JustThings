@@ -33,9 +33,6 @@
   Papa legt weiterhin einmalig fünf Tage fest. Papa PIN 1597.
   -->
   <!-- Firebase Compat für maximale Gerätekompatibilität -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body class="min-h-full bg-gradient-to-br from-fuchsia-50 via-sky-50 to-blue-50 text-slate-900">
   <!-- Feste Login Leiste ganz oben als Fallback -->
@@ -892,67 +889,31 @@
 </script>
 <script>(function(){try{if(localStorage.getItem('malia_admin_v1')==='1'){ if(!window.state) window.state={}; window.state.admin=true; var el; el=document.getElementById('adminBar'); if(el) el.classList.remove('hidden'); var bLogin=document.getElementById('btnLogin'); if(bLogin) bLogin.classList.add('hidden'); var bLogout=document.getElementById('btnLogout'); if(bLogout) bLogout.classList.remove('hidden'); var il=document.getElementById('inlineLogin'); if(il) il.classList.add('hidden'); var tl=document.getElementById('topLoginBar'); if(tl) tl.style.display='none'; var hasFive = window.state && Array.isArray(window.state.days) && window.state.days.length===5; var b1=document.getElementById('btnDaysSetup'); if(b1) b1.classList.toggle('hidden', hasFive); var b2=document.getElementById('btnDaysEdit'); if(b2) b2.classList.toggle('hidden', !hasFive); }}catch(e){}})();</script>
 <script>
-// Firebase Compat Overrides für breite Browser Unterstützung
-async function initFirebaseCompat() {
-  try {
-    const ok = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
-    if (!ok) { state.usingCloud = false; setSync('Lokaler Modus aktiv. Daten bleiben auf diesem Gerät'); return; }
-    if (!firebase.apps.length) { fb.app = firebase.initializeApp(firebaseConfig); } else { fb.app = firebase.app(); }
-    fb.db = firebase.firestore();
-    fb.auth = firebase.auth();
-    fb.auth.onAuthStateChanged(() => { updateUIDOutput?.(); });
-    try {
-      await fb.auth.signInAnonymously();
-      state.usingCloud = true;
-      setSync('Cloud Sync aktiv. Daten werden geteilt');
-      subscribeSettingsCompat();
-      subscribeCloudCompat();
-    } catch(e) {
-      console.error('Auth failed', e);
-      state.usingCloud = false;
-      setSync('Cloud Anmeldung fehlgeschlagen. Prüfe Authentication Anonymous Login und autorisierte Domain', true);
-    }
-  } catch(e) {
-    console.error('Compat init error', e);
-    state.usingCloud = false;
-    setSync('Cloud Fehler. Es wird lokal gespeichert', true);
-  }
+function setSync(msg, isError=false){
+  const el = document.querySelector('#syncInfo');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? '#b91c1c' : '';
 }
 
 function subscribeSettingsCompat() {
-  if (!state.usingCloud) return;
+  if (!window.fb) return;
   const ref = fb.db.collection('settings').doc('config');
   ref.onSnapshot(snap => {
     if (!snap.exists) return;
     const cfg = snap.data();
     let changed = false;
-    if (Array.isArray(cfg.days) && JSON.stringify(cfg.days) !== JSON.stringify(state.days)) { state.days = cfg.days; state.mobileDayIndex = 0; changed = true; }
+    if (Array.isArray(cfg.days) && JSON.stringify(cfg.days) !== JSON.stringify(state.days)) {
+      state.days = cfg.days; state.mobileDayIndex = 0; changed = true;
+    }
     if (Number.isInteger(cfg.hourStart) && cfg.hourStart !== state.hourStart) { state.hourStart = cfg.hourStart; changed = true; }
     if (Number.isInteger(cfg.hourEnd) && cfg.hourEnd !== state.hourEnd) { state.hourEnd = cfg.hourEnd; changed = true; }
     if (changed) { saveLocal(); updateDaysUI(); subscribeCloudCompat(); }
-  }, err => { console.error('settings onSnapshot error', err); setSync('Cloud Abo Fehler: ' + err.message, true); });
-}
-
-async function syncSettingsCompat(){
-  if (!state.usingCloud) return;
-  try {
-    await fb.db.collection('settings').doc('config').set({
-      days: state.days,
-      hourStart: state.hourStart,
-      hourEnd: state.hourEnd,
-      updatedAt: new Date(),
-      updatedBy: fb.auth?.currentUser?.uid || null
-    }, { merge: true });
-    setSync('Cloud Sync aktiv. Daten werden geteilt');
-  } catch(e) {
-    console.error('Settings write failed', e);
-    setSync('Cloud Einstellungen konnten nicht gespeichert werden: ' + (e.code || e.message), true);
-  }
+  }, err => setSync('Cloud Abo Fehler: ' + err.message, true));
 }
 
 function subscribeCloudCompat() {
-  if (!state.usingCloud) return;
-  if (!state.days.length) return;
+  if (!window.fb || !state.days?.length) return;
   const q = fb.db.collection('bookings').where('dateISO', 'in', state.days);
   fb.unsub?.();
   fb.unsub = q.onSnapshot(snap => {
@@ -965,53 +926,27 @@ function subscribeCloudCompat() {
     });
     renderAll();
     saveLocal();
-  }, err => { console.error('subscribeCloud error', err); setSync('Cloud Abo Fehler: ' + err.message, true); });
+  }, err => setSync('Cloud Abo Fehler: ' + err.message, true));
 }
 
-async function cloudAddCompat(item) {
-  if (!state.usingCloud) { addLocal(item); return; }
-  try { await fb.db.collection('bookings').add({ ...item, createdAt: new Date(), createdBy: fb.auth?.currentUser?.uid || null }); }
-  catch(e) { console.error('Cloud add failed', e); setSync('Cloud Schreiben fehlgeschlagen. Lokal gespeichert. ' + (e.code || e.message), true); addLocal(item); }
-}
-
-async function cloudDeleteCompat(item) {
-  if (!state.usingCloud) { deleteLocal(item); return; }
-  try { if (item.id) await fb.db.collection('bookings').doc(item.id).delete(); }
-  catch(e){ console.error('Cloud delete failed', e); setSync('Cloud Löschen fehlgeschlagen ' + (e.code || e.message), true); }
-}
-
-async function cloudDiagnosticsCompat(){
-  const results = [];
-  function log(msg){ results.push(msg); console.log('[Diag]', msg); }
+async function initFirebaseCompat() {
   try {
-    if(!state.usingCloud) { log('Cloud nicht aktiv. Prüfe firebaseConfig Werte'); setSync('Cloud nicht aktiv', true); alert(results.join('
-')); return; }
-    const uid = fb.auth?.currentUser?.uid; log('Auth UID ' + (uid || 'keine'));
-    if(!uid){ setSync('Nicht angemeldet. Prüfe Authentication Anonymous Login', true); }
-    try {
-      await fb.db.collection('settings').doc('config').set({ lastDiagAt: new Date(), lastDiagBy: uid || null }, { merge: true });
-      log('settings/config schreiben ok');
-      const iso = toISO(new Date());
-      await fb.db.collection('bookings').add({ kind:'visit', name:'Diag', contact:'', note:'', dateISO: iso, hour: 9, duration:1, createdAt:new Date(), createdBy: uid || null });
-      log('bookings schreiben ok');
-      setSync('Cloud Schreiben ok');
-    } catch(e){ log('Fehler beim Schreiben: ' + e.code + ' ' + e.message); setSync('Cloud Schreiben fehlgeschlagen ' + (e.code||''), true); }
-  } catch(err){ log('Allgemeiner Fehler: ' + err.message); setSync('Diagnose Fehler', true); }
-  alert(results.join('
-'));
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    window.fb = { app: firebase.app(), auth, db };
+    auth.onAuthStateChanged(() => { try { updateUIDOutput(); } catch(e) {} });
+    await auth.signInAnonymously();
+    setSync('Cloud Sync aktiv. Daten werden geteilt');
+    subscribeSettingsCompat();
+    subscribeCloudCompat();
+  } catch(e) {
+    setSync('Cloud Anmeldung fehlgeschlagen: ' + (e.code || e.message), true);
+  }
 }
 
-// Alte Funktionsnamen überschreiben, damit der Rest des Codes funktioniert
-window.initFirebaseIfConfigured = initFirebaseCompat;
-window.subscribeSettings = subscribeSettingsCompat;
-window.syncSettings = syncSettingsCompat;
-window.subscribeCloud = subscribeCloudCompat;
-window.cloudAdd = cloudAddCompat;
-window.cloudDelete = cloudDeleteCompat;
-window.cloudDiagnostics = cloudDiagnosticsCompat;
-
-// Falls die erste Initialisierung noch nicht gegriffen hat, jetzt nachholen
-try { if (!state.usingCloud) { initFirebaseCompat(); } } catch(e) {}
+window.addEventListener('DOMContentLoaded', initFirebaseCompat);
 </script>
+
 </body>
 </html>
