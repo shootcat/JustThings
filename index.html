@@ -284,7 +284,7 @@ var CONTENT=[
   {id:'q11',type:'mcq',title:'Mexiko Fest',q:'Wie heißt das Fest in Mexiko, bei dem die Toten geehrt werden',t:30,opt:['Día de los Muertos','Día muerto','Muerto de trabajo','Muerto de aburrimiento'],ok:0},
   {id:'q12',type:'mcq',title:'Ghost Hunters',q:'In welcher Gemeinde im Kanton Aargau findest du die Ghost Hunters',t:30,opt:['Pratteln','Stein','Rheinfelden','Safenwil'],ok:3},
   // Minispiel 3
-  {id:'m8',type:'layout',title:'Der Spukhaus-Grundriss',q:'Finde die Symbole basierend auf den Zahlen-Hinweisen.',t:120,size:4,symbols:['👻','🕯️','🕳️']},
+  {id:'m8',type:'layout',title:'Der Spukhaus-Grundriss',q:'Finde die Symbole basierend auf den Zahlen-Hinweisen.',t:130,size:4,symbols:['👻','🕯️','🕳️']},
   
   {id:'q13',type:'mcq',title:'Klaustrophobie',q:'Bei der Klaustrophobie handelt es sich um die Angst vor',t:30,opt:['Angst vor dem Weihnachtsmann','Menschen mit dem Namen Klaus','Angst vor dem Alleinsein','Angst vor Enge und engen Räumen'],ok:3},
   {id:'q14',type:'mcq',title:'Forschung',q:'Wie nennt man die wissenschaftliche Erforschung angeblich paranormaler Phänomene',t:30,opt:['Kryptozoologie','Parapsychologie','Thanatologie','Esoterik'],ok:1},
@@ -399,7 +399,7 @@ function mountMCQ(r){
     b.onclick=function(){
       clearInterval(tid);
       var i=Number(b.getAttribute('data-i'));
-      if(i===r.ok){ State.score+=120; pulseScore(); } else { State.score-=15; }
+      if(i===r.ok){ State.score+=200; pulseScore(); } else { State.score-=15; } 
       State.i++; go();
     };
   });
@@ -434,7 +434,7 @@ function mountSlide(r){
   var t=(r.t||State.settings.mini)+(r._timeBoost||0);
   var tid=null;
 
-  function useSVG(){ img.onload=init; img.src='data:image/svg+xml;utf8,'+encodeURIComponent(svgPumpkin()); }
+  function useSVG(){ img.onload=init; img.src='data:image:svg+xml;utf8,'+encodeURIComponent(svgPumpkin()); }
   function loadPuzzle(){
     var candidates=[]; if(r.img) candidates.push(r.img);
     candidates=candidates.concat(ASSETS.puzzleCandidates);
@@ -546,7 +546,7 @@ function mountMemory(r){
 function viewLayout(r){
   var t=r.t||State.settings.mini;
   var size=r.size||4;
-  var gridColumns = '40px repeat('+size+', 1fr)'; // 40px for row hints
+  var gridColumns = '60px repeat('+size+', 1fr)'; // 60px für Row Hints (Fix für vergrößerte Symbole)
   return header(r.title)+
     '<p class="subtitle">'+r.q+'</p>'+
     '<div class="panel" style="max-width:520px;margin:0 auto;">'+ // MAX WIDTH FIX
@@ -555,7 +555,7 @@ function viewLayout(r){
       '</div>'+
       '<div id="layout-grid-wrap" style="max-width:480px;margin:0 auto;padding-top:4px;">'+ // INNER MAX WIDTH
         // Top Hints (Header for cols)
-        '<div id="colHints" style="display:grid;grid-template-columns:'+gridColumns+';height:40px;margin-bottom:4px;font-size:.8rem;color:var(--muted);text-align:center;"></div>'+
+        '<div id="colHints" style="display:grid;grid-template-columns:'+gridColumns+';height:40px;margin-bottom:4px;color:var(--muted);text-align:center;"></div>'+
         // Main Area
         '<div id="layoutGrid" style="display:grid;grid-template-columns:'+gridColumns+';gap:2px;border:1px solid var(--border)">'+
           // Grid cells will be here
@@ -569,7 +569,7 @@ function mountLayout(r){
   var boardSize=size*size;
   var board=Array(boardSize).fill(0); // 0=empty, 1=sym1, 2=sym2, 3=sym3
   var target=Array(boardSize).fill(0);
-  var tleft=r.t||120;
+  var tleft=r.t||130; 
   var tid=null;
   
   var gridEl=$('#layoutGrid');
@@ -614,10 +614,11 @@ function mountLayout(r){
     // Hints
     var hints=calculateHints();
     var colHintHtml='<div style="grid-column:1;grid-row:1;font-size:12px"></div>';
-    colHintsEl.style.gridTemplateColumns='40px repeat('+size+', 1fr)';
+    colHintsEl.style.gridTemplateColumns='60px repeat('+size+', 1fr)'; // Fix: 60px für Platz
     for(var c=0;c<size;c++){
       var cHints=hints.col[c];
-      var hintStr=symbols.map(s=>cHints[s]?'<div style="font-size:10px;line-height:10px">'+s+cHints[s]+'</div>':'').join('');
+      // HINWEIS-SYMBOLE VERGRÖSSERN (COL)
+      var hintStr=symbols.map(s=>cHints[s]?'<div style="line-height:14px;"><span style="font-size:18px;">'+s+'</span><span style="font-size:12px;">'+cHints[s]+'</span></div>':'').join('');
       colHintHtml+='<div style="grid-column:'+(c+2)+';grid-row:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:40px">'+hintStr+'</div>';
     }
     colHintsEl.innerHTML=colHintHtml;
@@ -628,8 +629,9 @@ function mountLayout(r){
     for(var r=0;r<size;r++){
       // Row Hint
       var rHints=hints.row[r];
-      var hintStr=symbols.map(s=>rHints[s]?'<span style="font-size:10px">'+s+rHints[s]+'</span>':'').join(' ');
-      gridHtml+='<div style="grid-column:1;grid-row:'+(r+1)+';display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:.8rem;color:var(--muted)">'+hintStr+'</div>';
+      // HINWEIS-SYMBOLE VERGRÖSSERN (ROW)
+      var hintStr=symbols.map(s=>rHints[s]?'<span style="margin-left:4px;"><span style="font-size:18px;">'+s+'</span><span style="font-size:12px;">'+rHints[s]+'</span></span>':'').join('');
+      gridHtml+='<div style="grid-column:1;grid-row:'+(r+1)+';display:flex;align-items:center;justify-content:flex-end;padding-right:4px;color:var(--muted)">'+hintStr+'</div>';
 
       // Cells
       for(var c=0;c<size;c++){
@@ -651,7 +653,7 @@ function mountLayout(r){
     checkWin();
   }
   
-  // 5. Win-Check
+  // 5. Win-Check (geht sofort weiter)
   function checkWin(){
     for(var i=0;i<boardSize;i++){
       if(board[i]!==target[i]) return;
@@ -659,9 +661,9 @@ function mountLayout(r){
     clearInterval(tid); 
     State.score+=250; 
     State.score+=(tleft*5); // Zeitbonus
-    pulseScore(); 
+    pulseScore(); // Visuelles Feedback für Punkte
     State.i++; 
-    go();
+    go(); // Sofortiger Übergang zur nächsten Stufe
   }
   
   // 6. Init
@@ -680,14 +682,16 @@ function mountLayout(r){
 /* NEU: IDEE 9 - Fluch der ungleichen Karten (Spot the Odd One Out) */
 function viewSpot(r){
   var t=r.t||State.settings.mini;
-  return header(r.title)+
-    '<p class="subtitle">'+r.q+'</p>'+
-    '<div class="panel" style="max-width:520px;margin:0 auto;">'+ // MAX WIDTH FIX
-      '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
-        '<span class="subtitle">Runde: <span id="roundCount">1</span> / '+r.maxRounds+'</span><span id="tt" class="mono">'+t+'</span>'+
-      '</div>'+
-      '<div id="spotGrid" style="display:grid; max-width:480px; margin:0 auto; gap:2px; border:1px solid var(--border)"></div>'+ // INNER MAX WIDTH
-    '</div>';
+  return [
+    header(r.title),
+    '<p class="subtitle">'+r.q+'</p>',
+    '<div class="panel" style="max-width:520px;margin:0 auto;">', // MAX WIDTH FIX
+      '<div class="row" style="justify-content:space-between;margin-bottom:8px">',
+        '<span class="subtitle">Runde: <span id="roundCount">1</span> / '+r.maxRounds+'</span><span id="tt" class="mono">'+t+'</span>',
+      '</div>',
+      '<div id="spotGrid" style="display:grid; max-width:480px; margin:0 auto; gap:2px; border:1px solid var(--border)"></div>', // INNER MAX WIDTH
+    '</div>'
+  ].join('');
 }
 function mountSpot(r){
   var size=r.gridSize||6;
