@@ -6,37 +6,143 @@
   <title>Haunted Quiz Manor</title>
   <meta name="theme-color" content="#07070a" />
   <style>
-    :root{ --panel: rgba(20,20,28,.65); --border: rgba(255,255,255,.12); --text:#fff; --muted:rgba(255,255,255,.8); --accent:#f97316; --bg:#0a0a12; }
-    html, body { height:100%; margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial; }
-    #bg-img{ position:fixed; inset:0; width:100%; height:100%; object-fit:cover; filter: blur(8px) brightness(.70) saturate(1.1); transform: scale(1.04); z-index:-3; opacity:0; transition: opacity .6s ease; }
-    .stage::before{ content:""; position:fixed; inset:0; background: radial-gradient(160% 80% at 50% 10%, rgba(90,0,130,.2), rgba(0,0,0,.9)); z-index:-4; }
-    .stage::after{ content:""; position:fixed; inset:0; background: radial-gradient(80% 50% at 50% 10%, rgba(128,0,160,.12), transparent), radial-gradient(60% 40% at 50% 100%, rgba(255,120,0,.07), transparent), linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,.75)); mix-blend-mode:multiply; z-index:-2; }
-    .grime{ position:fixed; inset:0; z-index:-1; pointer-events:none; background-image:
-      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.06), transparent),
+  :root{
+    --panel: rgba(20,20,28,.65);
+    --border: rgba(255,255,255,.12);
+    --text:#fff;
+    --muted:rgba(255,255,255,.8);
+    --accent:#f97316;
+    --bg:#0a0a12;
+  }
+
+  html, body{
+    height:100%;
+    width:100%;
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial;
+    overflow:hidden; /* kein Doppel-Scrollen */
+  }
+
+  /* Vollbild-Hintergrund sichtbar machen */
+  #bg-img{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    filter:blur(6px) brightness(.95) saturate(1.05);
+    transform:scale(1.02);
+    z-index:0;
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+
+  /* Scrollbarer Inhaltsbereich */
+  .stage{
+    position:relative;
+    z-index:1;
+    height:100%;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
+  }
+
+  /* Overlays nur als leichte Vignette hinter dem Inhalt */
+  .stage::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background: radial-gradient(160% 80% at 50% 8%, rgba(0,0,0,.10), rgba(0,0,0,.28));
+    opacity:.85;
+    z-index:1;
+    pointer-events:none;
+  }
+  .stage::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(80% 50% at 50% 12%, rgba(0,0,0,.06), transparent),
+      radial-gradient(60% 40% at 50% 100%, rgba(0,0,0,.05), transparent),
+      linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.22));
+    opacity:.9;
+    z-index:1;
+    pointer-events:none;
+  }
+
+  /* dezente Körnung, ebenfalls hinter dem Inhalt */
+  .grime{
+    position:fixed;
+    inset:0;
+    z-index:2;
+    pointer-events:none;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.05), transparent),
       radial-gradient(1px 1px at 80% 60%, rgba(0,0,0,.2), transparent),
-      radial-gradient(2px 1px at 60% 10%, rgba(255,255,255,.04), transparent),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 2px, transparent 2px 4px);
-      opacity:.7; filter: contrast(110%) saturate(120%);
-    }
-    .wrap{ max-width:1040px; margin:0 auto; padding:32px 24px; }
-    .title{ font-size:30px; font-weight:900; margin:0 0 6px; letter-spacing:.5px; text-shadow:0 2px 20px rgba(255,120,0,.18); }
-    .subtitle{ color:var(--muted); margin:0 0 8px; }
-    .panel{ background:var(--panel); backdrop-filter: blur(12px); border:1px solid var(--border); border-radius:20px; padding:20px; box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 24px 48px rgba(0,0,0,.4); }
-    .btn{ padding:16px 18px; min-height:64px; border-radius:14px; font-weight:750; background:rgba(255,255,255,.08); color:#fff; border:1px solid var(--border); cursor:pointer; transition: transform .06s ease, background .2s; }
-    .btn:hover{ background:rgba(255,255,255,.12); }
-    .btn:active{ transform: scale(.98); }
-    .btn.primary{ background:linear-gradient(180deg, rgba(249,115,22,.95), rgba(204,64,0,.95)); border:0; box-shadow:0 10px 24px rgba(249,115,22,.25); }
-    .row{ display:flex; gap:12px; }
-    .grow{ flex:1 1 auto; }
-    .grid{ display:grid; gap:14px; }
-    .answers{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
-    .hdr{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-    .hdr .badge{ font-size:.85rem; color:var(--muted); }
-    input{ width:100%; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.08); color:#fff; padding:12px 14px; outline:none; }
-    .mono{ font-variant-numeric: tabular-nums; }
-    .err{ position:fixed; left:12px; right:12px; bottom:12px; padding:10px; border-radius:12px; background:rgba(220,38,38,.15); border:1px solid rgba(220,38,38,.45); color:#fff; z-index:9999; }
-    .spacer{ height:10px; }
-  </style>
+      radial-gradient(2px 1px at 60% 10%, rgba(255,255,255,.03), transparent),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 2px, transparent 2px 4px);
+    opacity:.45;
+  }
+
+  /* Inhalt oben starten und immer sichtbar bleiben */
+  .wrap{
+    box-sizing:border-box;
+    max-width:1040px;
+    margin:0 auto;
+    padding:24px 16px 72px; /* unten etwas Luft */
+    position:relative;
+    z-index:10;
+    min-height:100%;
+  }
+
+  .title{ font-size:30px; font-weight:900; margin:0 0 6px; letter-spacing:.5px; text-shadow:0 2px 20px rgba(255,120,0,.18); }
+  .subtitle{ color:var(--muted); margin:0 0 8px; }
+
+  /* eine saubere, einmalige Panel-Definition ohne Schleier */
+  .panel{
+    position:relative;
+    z-index:11;
+    width:100%;
+    max-width:100%;
+    background: rgba(22,22,28,.92);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius:20px;
+    padding:20px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 36px rgba(0,0,0,.35);
+    overflow:visible;
+  }
+
+  .btn{ padding:16px 18px; min-height:64px; border-radius:14px; font-weight:750; background:rgba(255,255,255,.08); color:#fff; border:1px solid var(--border); cursor:pointer; transition: transform .06s ease, background .2s; }
+  .btn:hover{ background:rgba(255,255,255,.12); }
+  .btn:active{ transform: scale(.98); }
+  .btn.primary{ background:linear-gradient(180deg, rgba(249,115,22,.95), rgba(204,64,0,.95)); border:0; box-shadow:0 10px 24px rgba(249,115,22,.25); }
+
+  .row{ display:flex; gap:12px; }
+  .grow{ flex:1 1 auto; }
+  .grid{ display:grid; gap:14px; }
+  .answers{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+
+  .hdr{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .hdr .badge{ font-size:.85rem; color:var(--muted); }
+  input{ width:100%; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.08); color:#fff; padding:12px 14px; outline:none; }
+  .mono{ font-variant-numeric: tabular-nums; }
+  .err{ position:fixed; left:12px; right:12px; bottom:12px; padding:10px; border-radius:12px; background:rgba(220,38,38,.15); border:1px solid rgba(220,38,38,.45); color:#fff; z-index:9999; }
+  .spacer{ height:10px; }
+
+  /* Handy-Optimierung */
+  @media (max-width:700px){
+    .title{ font-size:22px; }
+    .subtitle{ font-size:.95rem; }
+    .btn{ min-height:52px; font-size:.95rem; padding:12px 14px; }
+    .grid.answers{ grid-template-columns: 1fr; }
+    .wrap{ padding:20px 12px 96px; }
+  }
+</style>
+
+
+
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
@@ -76,13 +182,18 @@ var ASSETS = {
     const d=document.createElement('div'); d.className='err'; d.textContent=msg; document.body.appendChild(d);
   }
   function next(){
-    if(tried.length>=ASSETS.bgCandidates.length){ showErr('Kein Hintergrund gefunden. Prüfe Dateiname und Ordner.'); return; }
-    const url=ASSETS.bgCandidates[tried.length];
-    tried.push(url);
-    bg.onload=function(){ bg.style.opacity=1; };
-    bg.onerror=function(){ setTimeout(next,0); };
-    bg.src=url+'?v='+Date.now();
+  if(tried.length>=ASSETS.bgCandidates.length){
+    showErr('Kein Hintergrund gefunden. Prüfe Dateiname und Ordner.');
+    return;
   }
+  const url = ASSETS.bgCandidates[tried.length];
+  tried.push(url);
+  bg.onload = function(){ bg.style.opacity = 1; };
+  bg.onerror = function(){ setTimeout(next,0); };
+  // nur bei http/https cache-busten
+  bg.src = /^https?:/i.test(url) ? (url+'?v='+Date.now()) : url;
+}
+
   next();
 })();
 
@@ -179,7 +290,7 @@ function header(title){
   return '<div class="hdr"><span class="badge">Frage '+(State.i+1)+' von '+State.rooms.length+'</span><span class="badge mono">Punkte '+State.score+'</span></div><h2 class="title">'+title+'</h2>';
 }
 function viewIntro(){
-  return '<h1 class="title">Haunted Quiz Manor</h1><p class="subtitle">Fünfzehn Fragen und zwei Minispiele. Unheimliche Stimmung. Punkte und Zeit entscheiden.</p><div class="spacer"></div><div class="panel"><label class="subtitle" for="name">Name für das Leaderboard</label><input id="name" placeholder="z. B. Rüdiger Müller" /><div class="spacer"></div><div class="row"><button class="btn primary grow" id="start">Start</button><button class="btn" id="lb">Leaderboard</button></div><div class="row" style="justify-content:space-between;margin-top:8px"><div id="fbStatus" class="subtitle" style="font-size:.8rem">Online Sync aus</div><div class="subtitle" style="font-size:.8rem">Sound startet nach Start</div></div></div>';
+  return '<h1 class="title">Haunted Quiz Manor</h1><p class="subtitle">Fünfzehn Fragen und zwei Minispiele. Unheimliche Stimmung. Punkte und Zeit entscheiden.</p><div class="spacer"></div><div class="panel"><label class="subtitle" for="name">Name für das Leaderboard</label><input id="name" placeholder="z. B. Kim oder Yannik" /><div class="spacer"></div><div class="row"><button class="btn primary grow" id="start">Start</button><button class="btn" id="lb">Leaderboard</button></div><div class="row" style="justify-content:space-between;margin-top:8px"><div id="fbStatus" class="subtitle" style="font-size:.8rem">Online Sync aus</div><div class="subtitle" style="font-size:.8rem">Sound startet nach Start</div></div></div>';
 }
 function mountIntro(){
   $('#start').onclick=function(){
@@ -193,14 +304,55 @@ function mountIntro(){
   updateFbBadge();
 }
 function viewLB(){
-  var r=lbGet();
-  var rows=r.map(function(x,i){
-    return '<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 0"><b>'+(i+1)+'.</b><span>'+x.name+'</span><span class="mono">'+x.score+'</span><span class="mono">'+tfmt(x.time)+'</span></div>';
-  }).join('');
-  if(!rows) rows='<div class="subtitle">Noch keine Einträge</div>';
-  return '<h2 class="title">Leaderboard</h2><div class="panel">'+rows+'</div><div class="spacer"></div><button class="btn" id="back">Zurück</button>';
+  return '<h2 class="title">Leaderboard</h2>'+
+    '<div class="panel" id="lbPanel"><div class="subtitle">Lade Einträge…</div></div>'+
+    '<div class="spacer"></div><button class="btn" id="back">Zurück</button>';
 }
-function mountLB(){ $('#back').onclick=function(){ render(viewIntro()); mountIntro(); }; }
+
+function mountLB(){
+  document.getElementById('back').onclick=function(){
+    render(viewIntro());
+    mountIntro();
+  };
+
+  if (FB_READY && FB_DB){
+    FB_DB.collection('hqm_scores')
+      .orderBy('score', 'desc')
+      .limit(50)
+      .onSnapshot(function(snap){
+        var rows = [];
+        snap.forEach(function(doc){ rows.push(doc.data()); });
+        rows.sort(function(a,b){
+          return (b.score - a.score) || ((a.timeMs||0) - (b.timeMs||0));
+        });
+        renderLBList(rows);
+      }, function(err){
+        renderLBList(lbGet());
+      });
+  } else {
+    renderLBList(lbGet());
+  }
+}
+
+function renderLBList(list){
+  var el = document.getElementById('lbPanel');
+  if(!el) return;
+  if(!list || !list.length){
+    el.innerHTML = '<div class="subtitle">Noch keine Einträge</div>';
+    return;
+  }
+  var html = list.map(function(x,i){
+    var name = x.name || 'Unbekannt';
+    var score = x.score || 0;
+    var t = x.timeMs || x.time || 0;
+    return '<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--border);padding:6px 0">'+
+      '<b>'+(i+1)+'.</b><span>'+name+'</span><span class="mono">'+score+'</span><span class="mono">'+tfmt(t)+'</span></div>';
+  }).join('');
+  el.innerHTML = html;
+}
+
+
+
 
 function go(){
   if(State.i>=State.rooms.length){
@@ -378,17 +530,18 @@ function viewResult(){
     '<div class="row"><button class="btn primary grow" id="again">Nochmal</button><button class="btn" id="toLB">Leaderboard</button></div>';
 }
 function mountResult(){
-  var entry={
-    name:State.player,
-    score:State.score,
-    time:State.end-State.start,
-    startISO:new Date(State.start).toISOString(),
-    endISO:new Date(State.end).toISOString(),
-    deviceId: DEVICE_ID,
-    date:new Date().toLocaleString('de-DE')
-  };
-  lbSave(entry);
-  saveOnline(entry);
+  var entry = {
+  name: State.player,
+  score: State.score,
+  time: State.end - State.start,   // lokal weiter nutzbar
+  timeMs: State.end - State.start, // für Firestore Sortierung
+  startISO: new Date(State.start).toISOString(),
+  endISO: new Date(State.end).toISOString(),
+  deviceId: DEVICE_ID,
+  date: new Date().toLocaleString('de-DE')
+};
+lbSave(entry);
+saveOnline(entry);
   $('#again').onclick=function(){ render(viewIntro()); mountIntro(); };
   $('#toLB').onclick=function(){ render(viewLB()); mountLB(); };
 }
