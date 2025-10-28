@@ -557,32 +557,17 @@ function pulseScore(){
 }
 
 // Ambience
+// Ambience
 function startAmbience(){
   try{
-    var ctx=new (window.AudioContext||window.webkitAudioContext)();
-    State.audio=ctx;
-    var master=ctx.createGain(); master.gain.value=0.12; master.connect(ctx.destination);
-    var oscA=ctx.createOscillator(); oscA.type='sine'; oscA.frequency.value=54;
-    var gA=ctx.createGain(); gA.gain.value=0.5; oscA.connect(gA); gA.connect(master); oscA.start();
-    var lfoA=ctx.createOscillator(); lfoA.frequency.value=0.08;
-    var lfoGainA=ctx.createGain(); lfoGainA.gain.value=0.35; lfoA.connect(lfoGainA); lfoGainA.connect(gA.gain); lfoA.start();
-    var oscB=ctx.createOscillator(); oscB.type='triangle'; oscB.frequency.value=81;
-    var gB=ctx.createGain(); gB.gain.value=0.25; oscB.connect(gB); gB.connect(master); oscB.start();
-    var lfoB=ctx.createOscillator(); lfoB.frequency.value=0.05;
-    var lfoGainB=ctx.createGain(); lfoGainB.gain.value=0.25; lfoB.connect(lfoGainB); lfoGainB.connect(gB.gain); lfoB.start();
-    var creak=ctx.createOscillator(); creak.type='sawtooth'; creak.frequency.value=20;
-    var gC=ctx.createGain(); gC.gain.value=0.0; creak.connect(gC); gC.connect(master); creak.start();
-    setInterval(function(){
-      var now=ctx.currentTime;
-      gC.gain.cancelScheduledValues(now);
-      gC.gain.setTargetAtTime(Math.random()*0.08, now, 0.2);
-      gC.gain.setTargetAtTime(0.0, now+0.6, 0.4);
-    },3000);
-    document.addEventListener('visibilitychange', function(){
-      if(document.hidden){ master.gain.setTargetAtTime(0, ctx.currentTime, .2); }
-      else { master.gain.setTargetAtTime(0.12, ctx.currentTime, .5); }
-    });
-  }catch(e){}
+    var audio = new Audio('ambient.mp3'); // deine Datei im gleichen Ordner
+    audio.loop = true;
+    audio.volume = 0.3; // Lautstärke
+    audio.play();
+    State.audio = audio;
+  }catch(e){
+    console.error('Audio konnte nicht geladen werden:', e);
+  }
 }
 
 // Boot
