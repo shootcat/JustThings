@@ -109,9 +109,9 @@
     background: rgba(22,22,28,.92);
     border: 1px solid rgba(255,255,255,.10);
     border-radius:20px;
-    padding:20px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 36px rgba(0,0,0,.35);
     overflow:visible;
+    padding:20px;
   }
 
   .btn{ padding:16px 18px; min-height:64px; border-radius:14px; font-weight:750; background:rgba(255,255,255,.08); color:#fff; border:1px solid var(--border); cursor:pointer; transition: transform .06s ease, background .2s; }
@@ -140,7 +140,6 @@
     .wrap{ padding:20px 12px 96px; }
   }
 </style>
-
 
 
   <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
@@ -270,19 +269,33 @@ var CONTENT=[
   {id:'q2',type:'mcq',title:'iPhone 17 Farben',q:'Welches der aktuellen iPhone 17 Pro Modelle verfärbt sich laut Berichten und verliert seine Farbe',t:30,opt:['Orange','Blau','Silber','Schwarz'],ok:0},
   {id:'q3',type:'mcq',title:'Hier kommt Alex',q:'Auf welchem Film von Stanley Kubrick basiert der Hit der Toten Hosen',t:30,opt:['The Shining','Uhrwerk Orange','Barry Lyndon','Full Metal Jacket'],ok:1},
   {id:'q4',type:'mcq',title:'Found Footage',q:'Welcher Film gilt als Wegbereiter des Found Footage Horrorgenres',t:30,opt:['Paranormal Activity','REC','Cloverfield','The Blair Witch Project'],ok:3},
+  // Minispiel 1
   {id:'m1',type:'slide',title:'Zerbrochenes Bild',q:'Schiebe die Teile, bis das Motiv korrekt ist',t:95,size:3},
+  
   {id:'q5',type:'mcq',title:'Buchvorlage',q:'Welcher dieser Filme hat keine Buchvorlage',t:30,opt:['Halloween (1978)','Der Exorzist (1973)','Carrie (1976)','Shining (1980)'],ok:0},
   {id:'q6',type:'mcq',title:'Hexenprozesse',q:'Welche amerikanische Stadt ist für die meisten Hinrichtungen während der Hexenverfolgung bekannt',t:30,opt:['Boston','Fairfield','Salem','Hartford'],ok:2},
   {id:'q7',type:'mcq',title:'Son of Sam',q:'1976 wütete Sam in New York. Welches angebliche Wesen trieb ihn laut eigener Aussage an',t:30,opt:['Ein Dämon im Spiegel','Ein sprechender Hund des Nachbarn','Eine Stimme aus dem Radio','Ein toter Verwandter'],ok:1},
   {id:'q8',type:'mcq',title:'Serienmörder',q:'Wer war der Kannibale von Milwaukee',t:30,opt:['Jeffrey Dahmer','John Wayne Gacy','Richard Chase','Albert Fish'],ok:0},
+  // Minispiel 2
   {id:'m2',type:'memory',title:'Verfluchte Karten',q:'Decke Paare auf. So wenig Fehlversuche wie möglich',pairs:8,t:60},
+  
   {id:'q9',type:'mcq',title:'Phobien',q:'Was ist der lateinische Begriff für die Angst vor Spinnen',t:30,opt:['Anthophobie','Astraphobie','Arachnophobie','Siderodromophobie'],ok:2},
   {id:'q10',type:'mcq',title:'Schlafparalyse',q:'Was passiert bei Sleep Paralysis',t:30,opt:['Man verlässt den Körper für kurze Zeit','Man wacht auf, kann sich nicht bewegen und sieht Gestalten','Man hat lebhafte Tagträume im Halbschlaf','Man hört Stimmen ohne etwas zu sehen'],ok:1},
   {id:'q11',type:'mcq',title:'Mexiko Fest',q:'Wie heißt das Fest in Mexiko, bei dem die Toten geehrt werden',t:30,opt:['Día de los Muertos','Día muerto','Muerto de trabajo','Muerto de aburrimiento'],ok:0},
   {id:'q12',type:'mcq',title:'Ghost Hunters',q:'In welcher Gemeinde im Kanton Aargau findest du die Ghost Hunters',t:30,opt:['Pratteln','Stein','Rheinfelden','Safenwil'],ok:3},
+  // Minispiel 3
+  {id:'m8',type:'layout',title:'Der Spukhaus-Grundriss',q:'Finde die Symbole basierend auf den Zahlen-Hinweisen.',t:120,size:4,symbols:['👻','🕯️','🕳️']},
+  
   {id:'q13',type:'mcq',title:'Klaustrophobie',q:'Bei der Klaustrophobie handelt es sich um die Angst vor',t:30,opt:['Angst vor dem Weihnachtsmann','Menschen mit dem Namen Klaus','Angst vor dem Alleinsein','Angst vor Enge und engen Räumen'],ok:3},
   {id:'q14',type:'mcq',title:'Forschung',q:'Wie nennt man die wissenschaftliche Erforschung angeblich paranormaler Phänomene',t:30,opt:['Kryptozoologie','Parapsychologie','Thanatologie','Esoterik'],ok:1},
-  {id:'q15',type:'mcq',title:'Creepypasta',q:'Welche Figur entstand aus einem Photoshop Wettbewerb und wurde Symbol moderner Internet Legenden',t:30,opt:['Jeff the Killer','The Rake','Slender Man','BEN Drowned'],ok:2}
+  {id:'q15',type:'mcq',title:'Creepypasta',q:'Welche Figur entstand aus einem Photoshop Wettbewerb und wurde Symbol moderner Internet Legenden',t:30,opt:['Jeff the Killer','The Rake','Slender Man','BEN Drowned'],ok:2},
+  // Neue Fragen (q16, q17, q18)
+  {id:'q16',type:'mcq',title:'Regie-Klassiker',q:'Wer ist der Regisseur des Kultfilms *The Exorcist* (1973), der als einer der besten Horrorfilme aller Zeiten gilt?',t:30,opt:['John Carpenter','Wes Craven','William Friedkin','Dario Argento'],ok:2},
+  // Minispiel 4
+  {id:'m9',type:'spot',title:'Fluch der ungleichen Karten',q:'Finde das Symbol, das sich leicht von den anderen unterscheidet. Schnelligkeit zählt!',t:45,gridSize:6,baseIcon:'💀',diffIcon:'☠️',maxRounds:10},
+  
+  {id:'q17',type:'mcq',title:'Paranormale Phänomene',q:'Welches Element ist typisch für die Geistererscheinungen im Film *Poltergeist* (1982)?',t:30,opt:['Ein alter Spiegel','Das Telefon klingelt unaufhörlich','Fernseh-Störsignal/Statik','Ein singendes Spielzeug'],ok:2},
+  {id:'q18',type:'mcq',title:'Conjuring Universum',q:'Wie heißt die Puppe in der *Conjuring* Universum, die auf einer echten Stoffpuppe basiert, welche angeblich besessen ist?',t:30,opt:['Chucky','Annabelle','Billy','Fiona'],ok:1}
 ];
 
 // Views
@@ -290,7 +303,7 @@ function header(title){
   return '<div class="hdr"><span class="badge">Frage '+(State.i+1)+' von '+State.rooms.length+'</span><span class="badge mono">Punkte '+State.score+'</span></div><h2 class="title">'+title+'</h2>';
 }
 function viewIntro(){
-  return '<h1 class="title">Haunted Quiz Manor</h1><p class="subtitle">Fünfzehn Fragen und zwei Minispiele. Unheimliche Stimmung. Punkte und Zeit entscheiden.</p><div class="spacer"></div><div class="panel"><label class="subtitle" for="name">Name für das Leaderboard</label><input id="name" placeholder="Nur vollständige Namen werden zur Wertung aufgenommen" /><div class="spacer"></div><div class="row"><button class="btn primary grow" id="start">Start</button><button class="btn" id="lb">Leaderboard</button></div><div class="row" style="justify-content:space-between;margin-top:8px"><div id="fbStatus" class="subtitle" style="font-size:.8rem">Online Sync aus</div><div class="subtitle" style="font-size:.8rem">Sound startet nach Start</div></div></div>';
+  return '<h1 class="title">Haunted Quiz Manor</h1><p class="subtitle">Achtzehn Fragen und vier Minispiele. Unheimliche Stimmung. Punkte und Zeit entscheiden.</p><div class="spacer"></div><div class="panel"><label class="subtitle" for="name">Name für das Leaderboard</label><input id="name" placeholder="Nur vollständige Namen werden zur Wertung aufgenommen" /><div class="spacer"></div><div class="row"><button class="btn primary grow" id="start">Start</button><button class="btn" id="lb">Leaderboard</button></div><div class="row" style="justify-content:space-between;margin-top:8px"><div id="fbStatus" class="subtitle" style="font-size:.8rem">Online Sync aus</div><div class="subtitle" style="font-size:.8rem">Sound startet nach Start</div></div></div>';
 }
 function mountIntro(){
   $('#start').onclick=function(){
@@ -365,6 +378,8 @@ function go(){
   if(r.type==='mcq'){ render(viewMCQ(r)); mountMCQ(r); return; }
   if(r.type==='slide'){ render(viewSlide(r)); mountSlide(r); return; }
   if(r.type==='memory'){ render(viewMemory(r)); mountMemory(r); return; }
+  if(r.type==='layout'){ render(viewLayout(r)); mountLayout(r); return; }
+  if(r.type==='spot'){ render(viewSpot(r)); mountSpot(r); return; }
 }
 
 function viewMCQ(r){
@@ -397,7 +412,7 @@ function viewSlide(r){
   r._timeBoost = 15;
   return header(r.title) +
     '<p class="subtitle">'+r.q+'</p>' +
-    '<div class="panel">' +
+    '<div class="panel" style="max-width:520px;margin:0 auto;">' + // MAX WIDTH FIX
       '<canvas id="cv" style="width:100%;max-width:520px;height:auto;border-radius:14px"></canvas>' +
       '<div class="row" style="justify-content:space-between;margin-top:8px">' +
         '<span class="subtitle" style="font-size:.9rem">Schiebe Teile neben die Lücke</span>' +
@@ -461,7 +476,16 @@ function mountSlide(r){
     var col=Math.floor(x/tw), row=Math.floor(y/th), idx=row*size+col;
     if(neigh(empty).includes(idx)){ swap(idx,empty); empty=idx; draw(); check(); }
   }
-  function check(){ for(var i=0;i<board.length;i++){ if(board[i]!==i) return; } clearInterval(tid); State.score+=160; pulseScore(); State.i++; go(); }
+  function check(){ 
+    for(var i=0;i<board.length;i++){ 
+      if(board[i]!==i) return; 
+    } 
+    clearInterval(tid); 
+    State.score+=160; 
+    pulseScore(); 
+    State.i++; 
+    go(); // Bug Fix: transition now relies fully on go()
+  }
   function fail(){ State.score-=25; State.i++; go(); }
   function svgPumpkin(){ return `<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#2a2a44'/><stop offset='100%' stop-color='#0a0a12'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><g fill='white' opacity='0.9'><circle cx='140' cy='150' r='14'/><circle cx='300' cy='170' r='14'/><path d='M90 320 C 180 350, 240 350, 330 320' stroke='white' stroke-width='3' fill='none' /><text x='50%' y='50%' text-anchor='middle' fill='white' font-size='40' font-family='Georgia'>🎃</text></g></svg>`; }
 }
@@ -471,7 +495,7 @@ function viewMemory(r){
   var t=r.t||60;
   return header(r.title)+
     '<p class="subtitle">'+r.q+'</p>'+
-    '<div class="panel">'+
+    '<div class="panel" style="max-width:520px;margin:0 auto;">'+ // MAX WIDTH FIX
       '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
         '<span class="subtitle">Zeit</span><span id="tt" class="mono">'+t+'</span>'+
       '</div>'+
@@ -516,6 +540,216 @@ function mountMemory(r){
   }
   function fail(){ State.score-=25; State.i++; go(); }
 }
+
+
+/* NEU: IDEE 8 - Spukhaus-Grundriss (Layout Deduction) */
+function viewLayout(r){
+  var t=r.t||State.settings.mini;
+  var size=r.size||4;
+  var gridColumns = '40px repeat('+size+', 1fr)'; // 40px for row hints
+  return header(r.title)+
+    '<p class="subtitle">'+r.q+'</p>'+
+    '<div class="panel" style="max-width:520px;margin:0 auto;">'+ // MAX WIDTH FIX
+      '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
+        '<span class="subtitle">Klicke zum Wechsel: 👻 ↔️ 🕯️ ↔️ 🕳️</span><span id="tt" class="mono">'+t+'</span>'+
+      '</div>'+
+      '<div id="layout-grid-wrap" style="max-width:480px;margin:0 auto;padding-top:4px;">'+ // INNER MAX WIDTH
+        // Top Hints (Header for cols)
+        '<div id="colHints" style="display:grid;grid-template-columns:'+gridColumns+';height:40px;margin-bottom:4px;font-size:.8rem;color:var(--muted);text-align:center;"></div>'+
+        // Main Area
+        '<div id="layoutGrid" style="display:grid;grid-template-columns:'+gridColumns+';gap:2px;border:1px solid var(--border)">'+
+          // Grid cells will be here
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+function mountLayout(r){
+  var size=r.size||4;
+  var symbols=r.symbols||['👻','🕯️','🕳️'];
+  var boardSize=size*size;
+  var board=Array(boardSize).fill(0); // 0=empty, 1=sym1, 2=sym2, 3=sym3
+  var target=Array(boardSize).fill(0);
+  var tleft=r.t||120;
+  var tid=null;
+  
+  var gridEl=$('#layoutGrid');
+  var colHintsEl=$('#colHints');
+  
+  // 1. Muster generieren (lösbares Muster)
+  function initTarget(){
+    for(var i=0;i<boardSize;i++){
+      target[i]=Math.floor(Math.random()*(symbols.length+1)); 
+    }
+  }
+  
+  // 2. Hinweise berechnen
+  function calculateHints(){
+    var hints={row:[],col:[]};
+    for(var i=0;i<size;i++){
+      var rowHint={}, colHint={};
+      for(var j=0;j<size;j++){
+        var rowIdx=i*size+j;
+        var colIdx=j*size+i;
+
+        // Row hints
+        if(target[rowIdx]!==0){
+          var sym=symbols[target[rowIdx]-1];
+          rowHint[sym]=(rowHint[sym]||0)+1;
+        }
+
+        // Col hints
+        if(target[colIdx]!==0){
+          var sym=symbols[target[colIdx]-1];
+          colHint[sym]=(colHint[sym]||0)+1;
+        }
+      }
+      hints.row.push(rowHint);
+      hints.col.push(colHint);
+    }
+    return hints;
+  }
+  
+  // 3. Zeichnen der Hinweise und des Grids
+  function draw(){
+    // Hints
+    var hints=calculateHints();
+    var colHintHtml='<div style="grid-column:1;grid-row:1;font-size:12px"></div>';
+    colHintsEl.style.gridTemplateColumns='40px repeat('+size+', 1fr)';
+    for(var c=0;c<size;c++){
+      var cHints=hints.col[c];
+      var hintStr=symbols.map(s=>cHints[s]?'<div style="font-size:10px;line-height:10px">'+s+cHints[s]+'</div>':'').join('');
+      colHintHtml+='<div style="grid-column:'+(c+2)+';grid-row:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:40px">'+hintStr+'</div>';
+    }
+    colHintsEl.innerHTML=colHintHtml;
+
+
+    // Grid
+    var gridHtml='';
+    for(var r=0;r<size;r++){
+      // Row Hint
+      var rHints=hints.row[r];
+      var hintStr=symbols.map(s=>rHints[s]?'<span style="font-size:10px">'+s+rHints[s]+'</span>':'').join(' ');
+      gridHtml+='<div style="grid-column:1;grid-row:'+(r+1)+';display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:.8rem;color:var(--muted)">'+hintStr+'</div>';
+
+      // Cells
+      for(var c=0;c<size;c++){
+        var i=r*size+c;
+        var currentSym=board[i]===0?'':symbols[board[i]-1];
+        var bg=board[i]===0?'rgba(255,255,255,.05)':(board[i]===1?'rgba(249,115,22,.2)':(board[i]===2?'rgba(200,200,255,.2)':'rgba(100,255,100,.2)'));
+        var color = board[i]===1?'#f97316':(board[i]===2?'#c8c8ff':'#64ff64');
+        gridHtml+='<button class="btn" data-id="'+i+'" style="grid-column:'+(c+2)+';grid-row:'+(r+1)+';min-height:40px;padding:0;font-size:24px;background:'+bg+';color:'+color+'">'+currentSym+'</button>';
+      }
+    }
+    gridEl.innerHTML=gridHtml;
+    $$('#layoutGrid .btn').forEach(b=>b.onclick=()=>onClick(Number(b.getAttribute('data-id'))));
+  }
+  
+  // 4. Klick-Logik
+  function onClick(id){
+    board[id]=(board[id]+1)%(symbols.length+1); // Cycle 0 -> 1 -> 2 -> 3 -> 0
+    draw();
+    checkWin();
+  }
+  
+  // 5. Win-Check
+  function checkWin(){
+    for(var i=0;i<boardSize;i++){
+      if(board[i]!==target[i]) return;
+    }
+    clearInterval(tid); 
+    State.score+=250; 
+    State.score+=(tleft*5); // Zeitbonus
+    pulseScore(); 
+    State.i++; 
+    go();
+  }
+  
+  // 6. Init
+  initTarget();
+  draw();
+  tid=setInterval(function(){ 
+    tleft--; var el=$('#tt'); 
+    if(el) el.textContent=tleft; 
+    if(tleft<=0){ clearInterval(tid); fail(); } 
+  },1000);
+
+  function fail(){ State.score-=35; State.i++; go(); }
+}
+
+
+/* NEU: IDEE 9 - Fluch der ungleichen Karten (Spot the Odd One Out) */
+function viewSpot(r){
+  var t=r.t||State.settings.mini;
+  return header(r.title)+
+    '<p class="subtitle">'+r.q+'</p>'+
+    '<div class="panel" style="max-width:520px;margin:0 auto;">'+ // MAX WIDTH FIX
+      '<div class="row" style="justify-content:space-between;margin-bottom:8px">'+
+        '<span class="subtitle">Runde: <span id="roundCount">1</span> / '+r.maxRounds+'</span><span id="tt" class="mono">'+t+'</span>'+
+      '</div>'+
+      '<div id="spotGrid" style="display:grid; max-width:480px; margin:0 auto; gap:2px; border:1px solid var(--border)"></div>'+ // INNER MAX WIDTH
+    '</div>';
+}
+function mountSpot(r){
+  var size=r.gridSize||6;
+  var base=r.baseIcon||'💀';
+  var diff=r.diffIcon||'☠️';
+  var maxRounds=r.maxRounds||10;
+  var currentRound=1;
+  var tleft=r.t||45;
+  var tid=null;
+  var boardSize=size*size;
+  var targetId=-1;
+  var gridEl=$('#spotGrid');
+  
+  function initRound(){
+    targetId=Math.floor(Math.random()*boardSize);
+    gridEl.style.gridTemplateColumns='repeat('+size+', 1fr)';
+    
+    var html='';
+    for(var i=0;i<boardSize;i++){
+      var icon=i===targetId?diff:base;
+      var isTarget=i===targetId?'data-target="1"':'';
+      var bg='rgba(255,255,255,.05)';
+      var color = i===targetId?'var(--accent)':'#fff';
+      html+='<button class="btn" data-id="'+i+'" '+isTarget+' style="min-height:50px;padding:0;font-size:24px;background:'+bg+';color:'+color+'">'+icon+'</button>';
+    }
+    gridEl.innerHTML=html;
+    $$('#spotGrid .btn').forEach(b=>b.onclick=()=>onClick(b));
+    $('#roundCount').textContent=currentRound;
+  }
+
+  function onClick(button){
+    if(button.getAttribute('data-target')==='1'){
+      State.score+=20;
+      pulseScore();
+      
+      currentRound++;
+      if(currentRound>maxRounds){
+        clearInterval(tid);
+        State.score+=(tleft*10); // Großer Bonus für Zeit
+        State.i++; go();
+        return;
+      }
+      initRound();
+    }else{
+      State.score-=5;
+      pulseScore();
+      tleft=Math.max(0, tleft-3); // Zeitstrafe für falschen Klick
+      var tt=$('#tt'); if(tt) tt.textContent=tleft; 
+    }
+  }
+
+  // Init & Timer
+  initRound();
+  tid=setInterval(function(){ 
+    tleft--; var el=$('#tt'); 
+    if(el) el.textContent=tleft; 
+    if(tleft<=0){ clearInterval(tid); fail(); } 
+  },1000);
+
+  function fail(){ State.score-=20; State.i++; go(); }
+}
+
 
 function viewResult(){
   return '<h2 class="title">Auswertung</h2>'+
