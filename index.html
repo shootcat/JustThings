@@ -143,29 +143,21 @@
   <script type="module">
   /* ===== Dual-Modus: DEMO vs LIVE ===== */
   const IS_DEMO = location.protocol === 'file:';
-  const TEST_UNLOCK_ALL = false;   /* zum Testen bequem */
+  const TEST_UNLOCK_ALL = false;  /* produktiv: false */
   const DOOR_IMAGES = true;
 
   /* ===== Partikel Canvas; performant ===== */
-  const FX = (()=>{
-    const cvs = document.getElementById('fx');
-    const ctx = cvs.getContext('2d', { alpha:true });
-    const DPR = Math.min(window.devicePixelRatio||1, 1.5);
-    const MAX_FLAKES = 200;
-    let w=0, h=0, flakes=[], running=true, last=0;
-    function resize(){ const r=cvs.getBoundingClientRect(); w=(r.width*DPR)|0; h=(r.height*DPR)|0; cvs.width=w; cvs.height=h; makeFlakes() }
-    function makeFlakes(){ const n=Math.min(MAX_FLAKES, (w*h/45000)|0); flakes=new Array(n).fill(0).map(spawn) }
-    function spawn(){ return {x:Math.random()*w, y:Math.random()*h, r:1+Math.random()*2.5*DPR, vx:(-0.12+Math.random()*0.24)*DPR, vy:(0.2+Math.random()*0.6)*DPR, a:0.3+Math.random()*0.6, tw:Math.random()*6.28} }
-    function step(ts){ if(!running) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts;
-      ctx.clearRect(0,0,w,h);
+  const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
+    const DPR=Math.min(window.devicePixelRatio||1,1.5); const MAX=200; let w=0,h=0,flakes=[],run=true,last=0;
+    function resize(){ const r=cvs.getBoundingClientRect(); w=(r.width*DPR)|0; h=(r.height*DPR)|0; cvs.width=w; cvs.height=h; const n=Math.min(MAX,(w*h/45000)|0); flakes=new Array(n).fill(0).map(()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*2.5*DPR,vx:(-0.12+Math.random()*0.24)*DPR,vy:(0.2+Math.random()*0.6)*DPR,a:0.3+Math.random()*0.6,tw:Math.random()*6.28})) }
+    function step(ts){ if(!run) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts; ctx.clearRect(0,0,w,h);
       for(const f of flakes){ f.tw+=.01; const wob=Math.sin(f.tw)*.25*DPR; f.x+=f.vx+wob; f.y+=f.vy;
         if(f.y-f.r>h){ f.y=-f.r; f.x=Math.random()*w } if(f.x<-5*DPR){ f.x=w+5*DPR } if(f.x>w+5*DPR){ f.x=-5*DPR }
         ctx.beginPath(); ctx.globalAlpha=f.a; ctx.fillStyle='#fff'; ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill();
       } ctx.globalAlpha=1; requestAnimationFrame(step) }
     window.addEventListener('resize', ()=>{ clearTimeout(window.__t); window.__t=setTimeout(resize,150) });
-    document.addEventListener('visibilitychange', ()=>{ running=!document.hidden; if(running) requestAnimationFrame(step) });
-    resize(); requestAnimationFrame(step);
-    return { stop(){running=false}, start(){running=true; requestAnimationFrame(step)} };
+    document.addEventListener('visibilitychange', ()=>{ run=!document.hidden; if(run) requestAnimationFrame(step) });
+    resize(); requestAnimationFrame(step); return { stop(){run=false}, start(){run=true; requestAnimationFrame(step)} };
   })();
 
   /* ===== UI Refs ===== */
@@ -195,16 +187,11 @@
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
 
   /* ===== Auth UI ===== */
-  btnReg.onclick = async ()=>{
-    authMsg.textContent='';
-    const name=nameInp.value.trim(); const email=emailInp.value.trim(); const pw=pwInp.value;
+  btnReg.onclick = async ()=>{ authMsg.textContent=''; const name=nameInp.value.trim(); const email=emailInp.value.trim(); const pw=pwInp.value;
     if(!name || !email || pw.length<6){ authMsg.textContent='Bitte Name; E-Mail; Passwort (≥6 Zeichen)'; return }
-    const ok = await svc.register(name,email,pw).catch(e=>{ authMsg.textContent=e.message||String(e); return false });
-    if(ok!==false) authMsg.textContent='Registrierung ok';
+    const ok = await svc.register(name,email,pw).catch(e=>{ authMsg.textContent=e.message||String(e); return false }); if(ok!==false) authMsg.textContent='Registrierung ok';
   };
-  btnLogin.onclick = async ()=>{
-    authMsg.textContent='';
-    const email=emailInp.value.trim(); const pw=pwInp.value;
+  btnLogin.onclick = async ()=>{ authMsg.textContent=''; const email=emailInp.value.trim(); const pw=pwInp.value;
     if(!email || !pw){ authMsg.textContent='Bitte E-Mail und Passwort eingeben'; return }
     await svc.login(email,pw).catch(e=> authMsg.textContent=e.message||String(e));
   };
@@ -225,6 +212,9 @@
         unsubBoard = await svc.onAllUsers(qs=> renderBoard(qs));
       } else { boardPanel.style.display='none'; if(adminTools) adminTools.style.display='none' }
 
+      // Hinweis; wenn noch nicht Dezember
+      const now=new Date(); const isDec=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
+      if(!isDec) _toast('Hinweis; Türen sind bis 01.12. gesperrt');
       if(IS_DEMO){ showDemoAdminToggle(user) }
     } else {
       if(unsubUser) unsubUser(); if(unsubBoard) unsubBoard(); unsubUser=unsubBoard=null;
@@ -235,8 +225,6 @@
   /* ===== State; Render ===== */
   let state = { opened:{}, rewards:{} };
   function today(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()} }
-  const TEST_UNLOCK_ALL = false;
-  CONFIG.startMonth = 12;
 
   function renderGrid(user){
     const snapJSON = JSON.stringify(state.opened);
@@ -256,7 +244,7 @@
         if(DOOR_IMAGES){ const img=document.createElement('img'); img.className='thumb'; img.alt=`Türchen ${n}`; img.src=doorImagePath(n); btn.appendChild(img) }
       }
       const badge=document.createElement('div'); badge.className='badge'; badge.textContent=opened?'geöffnet':'geschlossen'; btn.appendChild(badge);
-      btn.onclick=()=>{ if(lock){ toast('Dieses Türchen ist noch gesperrt'); return } playSFX('click'); openDoor(user,n) };
+      btn.onclick=()=>{ if(lock){ _toast('Dieses Türchen ist noch gesperrt'); return } playSFX('click'); openDoor(user,n) };
       grid.appendChild(btn);
     }
   }
@@ -265,23 +253,33 @@
     if(state.opened[dayIndex]){ showReward(dayIndex, state.rewards[dayIndex], user); return }
     const seed = hash(`${user.uid}|${CONFIG.year}|${dayIndex}`); const rng=mul32(seed); const roll=rng();
     let reward;
+
     if(roll < CONFIG.probabilities.mealVoucher || roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher){
       const type = roll < CONFIG.probabilities.mealVoucher ? 'meal' : 'snack';
       const meta = type==='meal'
         ? { title:'Freies Mittagessen', desc:'Gutschein über ein freies Essen in der Kantine; bis 4 €' }
         : { title:'Süßigkeiten Gutschein', desc:'Leckerer Snack nach Wahl; an der Theke einlösbar' };
-      const nonce = randHex(12);
-      const { code, token } = await svc.signVoucher({ day:dayIndex, type, nonce });
-      reward = { kind:'voucher', payload:{ type, ...meta, code, token, nonce } };
-      playSFX('win');
+      try{
+        const nonce = randHex(12);
+        const { code, token } = await svc.signVoucher({ day:dayIndex, type, nonce });
+        reward = { kind:'voucher', payload:{ type, ...meta, code, token, nonce } };
+        const opened = {...state.opened, [dayIndex]:true};
+        const rewards = {...state.rewards, [dayIndex]: reward};
+        await svc.setUserDoc(user.uid, { opened, rewards, lastUpdated:new Date().toISOString() });
+        playSFX('win'); showReward(dayIndex, reward, user);
+      }catch(e){
+        console.error('signVoucher failed', e);
+        _toast('Konnte Gutschein nicht laden; bitte später erneut versuchen');
+        return;
+      }
     } else {
       const choices=MESSAGES; const msg=choices[(rng()*choices.length)|0]||{type:'quote', text:'Schönen Advent; du machst das super'};
-      reward = { kind:'message', payload: msg }; playSFX('open');
+      reward = { kind:'message', payload: msg };
+      const opened = {...state.opened, [dayIndex]:true};
+      const rewards = {...state.rewards, [dayIndex]: reward};
+      await svc.setUserDoc(user.uid, { opened, rewards, lastUpdated:new Date().toISOString() });
+      playSFX('open'); showReward(dayIndex, reward, user);
     }
-    const opened = {...state.opened, [dayIndex]:true};
-    const rewards = {...state.rewards, [dayIndex]: reward};
-    await svc.setUserDoc(user.uid, { opened, rewards, lastUpdated:new Date().toISOString() });
-    showReward(dayIndex, reward, user);
   }
 
   function showReward(dayIndex, reward, user){
@@ -316,12 +314,10 @@
   }
 
   /* ===== Admin Tools ===== */
-  if(btnVerify) btnVerify.onclick=async ()=>{
-    admMsg.textContent=''; const code=(admCode.value||'').trim(); if(!code){ admMsg.textContent='Bitte Code eingeben'; return }
+  if(btnVerify) btnVerify.onclick=async ()=>{ admMsg.textContent=''; const code=(admCode.value||'').trim(); if(!code){ admMsg.textContent='Bitte Code eingeben'; return }
     try{ const res = await svc.verifyVoucher(code); if(!res.ok){ admMsg.textContent='Ungültig oder unbekannt'; return } admMsg.textContent=`Gültig; Typ ${res.type}; Tag ${res.day}; Jahr ${res.year}; ${res.redeemed ? 'bereits eingelöst' : 'noch nicht eingelöst'}` }catch(e){ admMsg.textContent=e.message||String(e) }
   };
-  if(btnRedeem) btnRedeem.onclick=async ()=>{
-    admMsg.textContent=''; const code=(admCode.value||'').trim(); if(!code){ admMsg.textContent='Bitte Code eingeben'; return }
+  if(btnRedeem) btnRedeem.onclick=async ()=>{ admMsg.textContent=''; const code=(admCode.value||'').trim(); if(!code){ admMsg.textContent='Bitte Code eingeben'; return }
     try{ const res = await svc.redeemVoucher(code); if(res.ok){ admMsg.textContent='Erfolgreich eingelöst' } }catch(e){ admMsg.textContent=e.message||String(e) }
   };
 
@@ -329,11 +325,9 @@
   function showDemoAdminToggle(user){
     if(!IS_DEMO) return;
     demoAdminHint.style.display='';
-    const id='btn-demo-admin';
-    if(document.getElementById(id)) return;
+    const id='btn-demo-admin'; if(document.getElementById(id)) return;
     const b=document.createElement('button'); b.id=id; b.className='btn'; b.textContent='Mich als Admin markieren';
-    b.onclick=()=>{ svc.addAdmin(user.uid); toast('Du bist jetzt Admin'); };
-    // rechts neben „Info“
+    b.onclick=()=>{ svc.addAdmin(user.uid); _toast('Du bist jetzt Admin') };
     document.querySelector('.bar').appendChild(b);
   }
 
@@ -351,7 +345,7 @@
   function randHex(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('') }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0 } return h>>>0 }
-  function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
+  function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;","">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
   function signatureFor(uid){ const id = Math.abs((uid.split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)))%10000; return `SIG-${id.toString().padStart(4,'0')}` }
   function playSFX(kind){ const list=CONFIG.sfx[kind]||[]; if(!list.length) return; const url=list[(Math.random()*list.length)|0]; const a=new Audio(url); a.volume=.9; a.play().catch(()=>{}) }
   function doorImagePath(day){ const n=String(day).padStart(2,'0'); return `assets/doors/${n}.jpg` }
@@ -367,10 +361,7 @@
   /* ===== DEMO Service ===== */
   async function makeDemoService(){
     const NS='adv_demo_v1';
-    const store = {
-      get(k){ return JSON.parse(localStorage.getItem(NS+':'+k)||'null') },
-      set(k,v){ localStorage.setItem(NS+':'+k, JSON.stringify(v)) }
-    };
+    const store = { get(k){ return JSON.parse(localStorage.getItem(NS+':'+k)||'null') }, set(k,v){ localStorage.setItem(NS+':'+k, JSON.stringify(v)) } };
     const secret='DEMO_SECRET_please_change_locally';
     async function hmac(payload){
       const enc=new TextEncoder();
@@ -379,68 +370,37 @@
       const b= btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=+/g,'').replace(/\+/g,'A').replace(/\//g,'B');
       return b.slice(0,12);
     }
-    const listeners = { auth:[] };
-    function emitAuth(u){ listeners.auth.forEach(fn=>fn(u)) }
+    const listeners = { auth:[] }; function emitAuth(u){ listeners.auth.forEach(fn=>fn(u)) }
 
     return {
       async register(name,email,pw){
-        const users=store.get('users')||{};
-        if(users[email]) throw new Error('E-Mail bereits registriert');
-        const uid='u_'+hash(email);
-        users[email]={ uid, email, pw, name };
-        store.set('users', users);
-        store.set('session', { uid });
-        let doc=store.get('doc:'+uid) || { name, opened:{}, rewards:{} };
-        store.set('doc:'+uid, doc);
-        emitAuth({ uid, email, name });
-        return true;
+        const users=store.get('users')||{}; if(users[email]) throw new Error('E-Mail bereits registriert');
+        const uid='u_'+hash(email); users[email]={ uid, email, pw, name }; store.set('users', users); store.set('session', { uid });
+        const doc=store.get('doc:'+uid) || { name, opened:{}, rewards:{} }; store.set('doc:'+uid, doc); emitAuth({ uid, email, name }); return true;
       },
       async login(email,pw){
-        const users=store.get('users')||{};
-        const u=users[email]; if(!u) throw new Error('Kein Konto gefunden');
-        if(u.pw!==pw) throw new Error('Passwort falsch');
-        store.set('session', { uid:u.uid });
-        emitAuth({ uid:u.uid, email:u.email, name:u.name });
-        return true;
+        const users=store.get('users')||{}; const u=users[email]; if(!u) throw new Error('Kein Konto gefunden'); if(u.pw!==pw) throw new Error('Passwort falsch');
+        store.set('session', { uid:u.uid }); emitAuth({ uid:u.uid, email:u.email, name:u.name }); return true;
       },
       async logout(){ store.set('session', null); emitAuth(null) },
-      onAuth(cb){
-        listeners.auth.push(cb);
-        const s=store.get('session'); if(s){ const users=store.get('users')||{}; const U=Object.values(users).find(x=>x.uid===s.uid); if(U) cb({ uid:U.uid, email:U.email, name:U.name }) } else cb(null);
-      },
-      async onUserDoc(uid, cb){
-        const fire=()=> cb(store.get('doc:'+uid) || { opened:{}, rewards:{} });
-        fire();
-        const t=setInterval(fire, 500); // simpel; reicht für DEMO
-        return ()=> clearInterval(t);
-      },
+      onAuth(cb){ listeners.auth.push(cb); const s=store.get('session'); if(s){ const users=store.get('users')||{}; const U=Object.values(users).find(x=>x.uid===s.uid); if(U) cb({ uid:U.uid, email:U.email, name:U.name }) } else cb(null) },
+      async onUserDoc(uid, cb){ const fire=()=> cb(store.get('doc:'+uid) || { opened:{}, rewards:{} }); fire(); const t=setInterval(fire, 500); return ()=> clearInterval(t) },
       async setUserDoc(uid, data){ const old=store.get('doc:'+uid)||{}; const merged={...old, ...data}; store.set('doc:'+uid, merged) },
-      async onAllUsers(cb){
-        const tick=()=>{ const users=store.get('users')||{}; const list=Object.values(users).map(u=>{ const d=store.get('doc:'+u.uid)||{}; return { name:d.name||u.name||u.email, opened:d.opened||{}, uid:u.uid } }); cb(list) };
-        tick(); const t=setInterval(tick, 1000); return ()=> clearInterval(t);
-      },
+      async onAllUsers(cb){ const tick=()=>{ const users=store.get('users')||{}; const list=Object.values(users).map(u=>{ const d=store.get('doc:'+u.uid)||{}; return { name:d.name||u.name||u.email, opened:d.opened||{}, uid:u.uid } }); cb(list) }; tick(); const t=setInterval(tick, 1000); return ()=> clearInterval(t) },
       async isAdmin(uid){ const admins=store.get('admins')||{}; return !!admins[uid] },
       addAdmin(uid){ const admins=store.get('admins')||{}; admins[uid]=true; store.set('admins', admins) },
-      async signVoucher({ day, type, nonce }){
-        const sess=store.get('session'); if(!sess) throw new Error('Login erforderlich');
-        const payload=`${sess.uid}|${CONFIG.year}|${day}|${type}|${nonce}`;
-        const token=await hmac(payload);
+      async signVoucher({ day, type, nonce }){ const sess=store.get('session'); if(!sess) throw new Error('Login erforderlich');
+        const payload=`${sess.uid}|${CONFIG.year}|${day}|${type}|${nonce}`; const token=await hmac(payload);
         const code=`${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${token}-DEMO`;
-        // Voucher-Schatten
-        const vouchers=store.get('vouchers')||{};
-        vouchers[code]={ uid:sess.uid, day, type, token, nonce, year:CONFIG.year, redeemed:false };
-        store.set('vouchers', vouchers);
+        const vouchers=store.get('vouchers')||{}; vouchers[code]={ uid:sess.uid, day, type, token, nonce, year:CONFIG.year, redeemed:false }; store.set('vouchers', vouchers);
         return { code, token };
       },
-      async verifyVoucher(code){
-        const vouchers=store.get('vouchers')||{}; const v=vouchers[code]; if(!v) return { ok:false, reason:'not-found' };
-        const token=await (async()=>{ const payload=`${v.uid}|${v.year}|${v.day}|${v.type}|${v.nonce}`; return await hmac(payload) })();
-        return { ok: token===v.token, redeemed: !!v.redeemed, uid:v.uid, day:v.day, type:v.type, year:v.year };
+      async verifyVoucher(code){ const vouchers=store.get('vouchers')||{}; const v=vouchers[code]; if(!v) return { ok:false, reason:'not-found' };
+        const token=await (async()=>{ const payload=`${v.uid}|${v.year}|${v.day}|${v.type}|${v.nonce}`; return await hmac(payload) })(); return { ok: token===v.token, redeemed: !!v.redeemed, uid:v.uid, day:v.day, type:v.type, year:v.year };
       },
-      async redeemVoucher(code){
-        const vouchers=store.get('vouchers')||{}; const v=vouchers[code]; if(!v) throw new Error('Unbekannter Code');
+      async redeemVoucher(code){ const vouchers=store.get('vouchers')||{}; const v=vouchers[code]; if(!v) throw new Error('Unbekannter Code');
         const chk=await this.verifyVoucher(code); if(!chk.ok) throw new Error('Ungültige Signatur'); if(v.redeemed) throw new Error('Bereits eingelöst');
-        v.redeemed=true; v.redeemedAt=Date.now(); vouchers[code]=v; store.set('vouchers', vouchers); // optional: beim Nutzer markieren
+        v.redeemed=true; v.redeemedAt=Date.now(); vouchers[code]=v; store.set('vouchers', vouchers);
         const doc=store.get('doc:'+v.uid)||{opened:{},rewards:{}}; if(doc.rewards && doc.rewards[v.day] && doc.rewards[v.day].payload){ doc.rewards[v.day].payload.redeemed=true; doc.rewards[v.day].payload.redeemedAt=new Date().toISOString(); store.set('doc:'+v.uid, doc) }
         return { ok:true };
       }
@@ -449,7 +409,6 @@
 
   /* ===== LIVE Service (Firebase) ===== */
   async function makeLiveService(){
-    // trage hier deine echten Firebase Werte ein; oder belasse sie; wenn du mein Beispielprojekt nutzt
     const firebaseConfig = {
       apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
       authDomain: "geburt-ded5c.firebaseapp.com",
@@ -459,7 +418,6 @@
       appId: "1:528584992005:web:14dea3f914a432e317c36c",
       measurementId: "G-SX8G2KPVL8"
     };
-    // dynamische Imports; funktionieren nur über http/https; nicht über file
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
     const authMod = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
     const fsMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
@@ -468,7 +426,9 @@
     const app = initializeApp(firebaseConfig);
     const AUTH = authMod.getAuth(app);
     const DB   = fsMod.getFirestore(app);
-    const FUN  = fnMod.getFunctions(app);
+    // Region deiner Functions hier anpassen; z. B. 'europe-west1' oder 'us-central1'
+    const FUN  = fnMod.getFunctions(app, 'europe-west1');
+
     try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
 
     const signCallable   = fnMod.httpsCallable(FUN, 'signVoucher');
@@ -490,7 +450,7 @@
       async setUserDoc(uid, data){ const ref=fsMod.doc(DB,'adv_users',uid); await fsMod.updateDoc(ref, data) },
       async onAllUsers(cb){ const q=fsMod.query(fsMod.collection(DB,'adv_users')); return fsMod.onSnapshot(q, qs=> cb(qs.docs.map(d=> ({ uid:d.id, ...(d.data()||{}) })))) },
       async isAdmin(uid){ const s=await fsMod.getDoc(fsMod.doc(DB,'adv_admins',uid)); return s.exists() },
-      addAdmin(){ /* nur DEMO */ },
+      addAdmin(){},
       async signVoucher({ day, type, nonce }){ const res = await signCallable({ day, type, nonce }); return res.data },
       async verifyVoucher(code){ const res = await verifyCallable({ code }); return res.data },
       async redeemVoucher(code){ const res = await redeemCallable({ code }); return res.data }
