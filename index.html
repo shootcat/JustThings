@@ -61,6 +61,18 @@
   .toast{position:fixed; bottom:20px; right:20px; background:rgba(25,32,48,.9); color:#fff; border:1px solid var(--border); padding:10px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); opacity:0; transform:translateY(10px); transition:.25s}
   .toast.show{opacity:1; transform:translateY(0)}
   table{width:100%; border-collapse:collapse} th,td{padding:10px; border-bottom:1px solid var(--border)} th{text-align:left; color:var(--gold)}
+
+  /* Countdown Overlay */
+  #countdownOverlay{
+    position:fixed; inset:0; display:none; z-index:40;
+    background:rgba(5,8,12,.65); backdrop-filter: blur(2px);
+    align-items:center; justify-content:center; text-align:center; padding:24px;
+    pointer-events:auto;
+  }
+  #countdownOverlay .box{ max-width:820px; margin:auto; color:#fff }
+  #countdownOverlay .timer{ font-weight:900; font-size:clamp(28px, 6vw, 56px); letter-spacing:1.5px }
+  #countdownOverlay .msg{ margin-top:12px; font-size:clamp(14px, 2.4vw, 18px); color:var(--muted) }
+  #countdownOverlay .msg strong{ color:var(--gold) }
 </style>
 </head>
 <body>
@@ -137,24 +149,78 @@
     </div>
   </div>
 
+  <!-- Countdown Overlay -->
+  <div id="countdownOverlay" aria-hidden="true">
+    <div class="box">
+      <div class="timer" id="cdTimer">00 Tage; 00:00:00</div>
+      <div class="msg" id="cdText">
+        In <strong>XXX</strong> geht’s hier los in deinem persönlichen Kalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere Snacks sowie der Chance auf eine kostenlose <strong>Freitagsmahlzeit</strong>
+      </div>
+    </div>
+  </div>
+
   <div class="print-area" id="printArea"></div>
   <div class="toast" id="toast"></div>
 
   <script type="module">
   /* ===== Dual-Modus: DEMO vs LIVE ===== */
   const IS_DEMO = location.protocol === 'file:';
-  const TEST_UNLOCK_ALL = false;  /* produktiv: false */
+  const TEST_UNLOCK_ALL = false;
   const DOOR_IMAGES = true;
+
+  /* ===== Config; Sounds; Bilder ===== */
+  const CONFIG = {
+    bgImage:'assets/bg.jpg',
+    sfx:{ open:['assets/sfx/open.mp3'], win:['assets/sfx/win.mp3'], click:['assets/sfx/click.mp3'] },
+    probabilities:{ mealVoucher:0.0025, snackVoucher:0.05 }, /* 0;25 % Essen */
+    year:2025, startMonth:12, days:24
+  };
+  document.documentElement.style.setProperty('--bg', `url('${CONFIG.bgImage}')`);
+
+  /* ===== Countdown Overlay Logik (früh definieren) ===== */
+  function startCountdownOverlay(){
+    const overlay = document.getElementById('countdownOverlay');
+    const cdTimer = document.getElementById('cdTimer');
+    const cdText  = document.getElementById('cdText');
+    if(!overlay || !cdTimer || !cdText) return;
+
+    const target = new Date(CONFIG.year, CONFIG.startMonth - 1, 1, 0, 0, 0);
+    function fmt2(n){ return String(n).padStart(2,'0') }
+    function remainingParts(ms){
+      const s = Math.max(0, Math.floor(ms/1000));
+      const days = Math.floor(s / 86400);
+      const hrs  = Math.floor((s % 86400) / 3600);
+      const mins = Math.floor((s % 3600) / 60);
+      const secs = s % 60;
+      return { days, hrs, mins, secs };
+    }
+    function render(){
+      const now = new Date();
+      if (now >= target){ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); return }
+      const ms = target - now;
+      const { days, hrs, mins, secs } = remainingParts(ms);
+      cdTimer.textContent = `${days} Tage; ${fmt2(hrs)}:${fmt2(mins)}:${fmt2(secs)}`;
+      cdText.innerHTML = `In <strong>${days} ${days===1?'Tag':'Tagen'}</strong> geht’s hier los in deinem persönlichen Adventskalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere <strong>Süßigkeiten</strong> sowie der Chance auf eine kostenlose <strong>Freitagsmahlzeit</strong>`;
+      overlay.style.display = 'flex';
+      overlay.setAttribute('aria-hidden','false');
+    }
+    render();
+    if(window.__cdInt) clearInterval(window.__cdInt);
+    window.__cdInt = setInterval(render, 1000);
+  }
+  /* Countdown nach Config setzen */
+  startCountdownOverlay();
+
 
   /* ===== Partikel Canvas; performant ===== */
   const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
     const DPR=Math.min(window.devicePixelRatio||1,1.5); const MAX=200; let w=0,h=0,flakes=[],run=true,last=0;
     function resize(){ const r=cvs.getBoundingClientRect(); w=(r.width*DPR)|0; h=(r.height*DPR)|0; cvs.width=w; cvs.height=h; const n=Math.min(MAX,(w*h/45000)|0); flakes=new Array(n).fill(0).map(()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*2.5*DPR,vx:(-0.12+Math.random()*0.24)*DPR,vy:(0.2+Math.random()*0.6)*DPR,a:0.3+Math.random()*0.6,tw:Math.random()*6.28})) }
-    function step(ts){ if(!run) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts; ctx.clearRect(0,0,w,h);
+    function step(ts){ if(!run) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts; const ctx2=ctx; ctx2.clearRect(0,0,w,h);
       for(const f of flakes){ f.tw+=.01; const wob=Math.sin(f.tw)*.25*DPR; f.x+=f.vx+wob; f.y+=f.vy;
         if(f.y-f.r>h){ f.y=-f.r; f.x=Math.random()*w } if(f.x<-5*DPR){ f.x=w+5*DPR } if(f.x>w+5*DPR){ f.x=-5*DPR }
-        ctx.beginPath(); ctx.globalAlpha=f.a; ctx.fillStyle='#fff'; ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill();
-      } ctx.globalAlpha=1; requestAnimationFrame(step) }
+        ctx2.beginPath(); ctx2.globalAlpha=f.a; ctx2.fillStyle='#fff'; ctx2.arc(f.x,f.y,f.r,0,6.283); ctx2.fill();
+      } ctx2.globalAlpha=1; requestAnimationFrame(step) }
     window.addEventListener('resize', ()=>{ clearTimeout(window.__t); window.__t=setTimeout(resize,150) });
     document.addEventListener('visibilitychange', ()=>{ run=!document.hidden; if(run) requestAnimationFrame(step) });
     resize(); requestAnimationFrame(step); return { stop(){run=false}, start(){run=true; requestAnimationFrame(step)} };
@@ -169,10 +235,6 @@
   const btnReg=document.getElementById('btn-register'); const btnLogin=document.getElementById('btn-login'); const authMsg=document.getElementById('authMsg');
   const admCode=document.getElementById('admCode'); const admMsg=document.getElementById('admMsg'); const btnVerify=document.getElementById('btnVerify'); const btnRedeem=document.getElementById('btnRedeem');
   const demoAdminHint=document.getElementById('demoAdminHint');
-
-  /* ===== Config; Sounds; Bilder ===== */
-  const CONFIG = { bgImage:'assets/bg.jpg', sfx:{ open:['assets/sfx/open.mp3'], win:['assets/sfx/win.mp3'], click:['assets/sfx/click.mp3'] }, probabilities:{ mealVoucher:0.01, snackVoucher:0.05 }, year:2025, startMonth:12, days:24 };
-  document.documentElement.style.setProperty('--bg', `url('${CONFIG.bgImage}')`);
 
   const MESSAGES = [
     {type:'quote', text:'Teamwork macht Traumwerk; danke dass du Teil davon bist'},
@@ -212,13 +274,14 @@
         unsubBoard = await svc.onAllUsers(qs=> renderBoard(qs));
       } else { boardPanel.style.display='none'; if(adminTools) adminTools.style.display='none' }
 
-      // Hinweis; wenn noch nicht Dezember
       const now=new Date(); const isDec=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
       if(!isDec) _toast('Hinweis; Türen sind bis 01.12. gesperrt');
+      startCountdownOverlay();
       if(IS_DEMO){ showDemoAdminToggle(user) }
     } else {
       if(unsubUser) unsubUser(); if(unsubBoard) unsubBoard(); unsubUser=unsubBoard=null;
       authPanel.style.display=''; kalPanel.style.display='none'; boardPanel.style.display='none'; btnSignout.style.display='none'; userBox.textContent='';
+      startCountdownOverlay();
     }
   });
 
@@ -253,7 +316,6 @@
     if(state.opened[dayIndex]){ showReward(dayIndex, state.rewards[dayIndex], user); return }
     const seed = hash(`${user.uid}|${CONFIG.year}|${dayIndex}`); const rng=mul32(seed); const roll=rng();
     let reward;
-
     if(roll < CONFIG.probabilities.mealVoucher || roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher){
       const type = roll < CONFIG.probabilities.mealVoucher ? 'meal' : 'snack';
       const meta = type==='meal'
@@ -346,15 +408,14 @@
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0 } return h>>>0 }
   function esc(s){
-  return String(s).replace(/[&<>"']/g, m => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    "\"":"&quot;",
-    "'":"&#39;"
-  }[m]));
-}
-
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      "\"":"&quot;",
+      "'":"&#39;"
+    }[m]));
+  }
   function signatureFor(uid){ const id = Math.abs((uid.split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)))%10000; return `SIG-${id.toString().padStart(4,'0')}` }
   function playSFX(kind){ const list=CONFIG.sfx[kind]||[]; if(!list.length) return; const url=list[(Math.random()*list.length)|0]; const a=new Audio(url); a.volume=.9; a.play().catch(()=>{}) }
   function doorImagePath(day){ const n=String(day).padStart(2,'0'); return `assets/doors/${n}.jpg` }
@@ -362,7 +423,7 @@
 
   btnHow.onclick=()=>{ const body=`<div class="muted">Hinweise</div><ul>
     <li>DEMO-Modus speichert lokal; LIVE nutzt Firebase</li>
-    <li>1 % Essen; 5 % Snack; druckbare Gutscheine</li>
+    <li>0;25 % Essen; 5 % Snack; druckbare Gutscheine</li>
     <li>Admin kann Codes prüfen; einlösen</li></ul>`;
     document.getElementById('modalBody').innerHTML=body; document.getElementById('modalTitle').textContent='Info'; openModal();
   };
@@ -435,7 +496,6 @@
     const app = initializeApp(firebaseConfig);
     const AUTH = authMod.getAuth(app);
     const DB   = fsMod.getFirestore(app);
-    // Region deiner Functions hier anpassen; z. B. 'europe-west1' oder 'us-central1'
     const FUN  = fnMod.getFunctions(app, 'europe-west1');
 
     try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
