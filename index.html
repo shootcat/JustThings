@@ -345,7 +345,16 @@
   function randHex(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('') }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0 } return h>>>0 }
-  function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;","">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
+  function esc(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "\"":"&quot;",
+    "'":"&#39;"
+  }[m]));
+}
+
   function signatureFor(uid){ const id = Math.abs((uid.split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)))%10000; return `SIG-${id.toString().padStart(4,'0')}` }
   function playSFX(kind){ const list=CONFIG.sfx[kind]||[]; if(!list.length) return; const url=list[(Math.random()*list.length)|0]; const a=new Audio(url); a.volume=.9; a.play().catch(()=>{}) }
   function doorImagePath(day){ const n=String(day).padStart(2,'0'); return `assets/doors/${n}.jpg` }
