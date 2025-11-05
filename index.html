@@ -235,7 +235,8 @@
   /* ===== State; Render ===== */
   let state = { opened:{}, rewards:{} };
   function today(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()} }
-  CONFIG.startMonth = new Date().getMonth()+1; /* bequem testen */
+  const TEST_UNLOCK_ALL = false;
+  CONFIG.startMonth = 12;
 
   function renderGrid(user){
     const snapJSON = JSON.stringify(state.opened);
