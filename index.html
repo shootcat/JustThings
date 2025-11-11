@@ -571,54 +571,106 @@ function getMessageFor(user, dayIndex){
     };
   }
 
-  /* ===== LIVE Service (Firebase) ===== */
-  async function makeLiveService(){
-    const firebaseConfig = {
-      apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
-      authDomain: "geburt-ded5c.firebaseapp.com",
-      projectId: "geburt-ded5c",
-      storageBucket: "geburt-ded5c.firebasestorage.app",
-      messagingSenderId: "528584992005",
-      appId: "1:528584992005:web:14dea3f914a432e317c36c",
-      measurementId: "G-SX8G2KPVL8"
-    };
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
-    const authMod = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
-    const fsMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-    const fnMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js');
+/* ===== LIVE Service (Firebase) – mit Fallback bei CORS/Fehlern ===== */
+async function makeLiveService(){
+  const firebaseConfig = {
+    apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+    authDomain: "geburt-ded5c.firebaseapp.com",
+    projectId: "geburt-ded5c",
+    storageBucket: "geburt-ded5c.firebasestorage.app",
+    messagingSenderId: "528584992005",
+    appId: "1:528584992005:web:14dea3f914a432e317c36c",
+    measurementId: "G-SX8G2KPVL8"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const AUTH = authMod.getAuth(app);
-    const DB   = fsMod.getFirestore(app);
-    const FUN  = fnMod.getFunctions(app, 'europe-west1');
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+  const authMod = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+  const fsMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+  const fnMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js');
 
-    try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
+  const app = initializeApp(firebaseConfig);
+  const AUTH = authMod.getAuth(app);
+  const DB   = fsMod.getFirestore(app);
+  const FUN  = fnMod.getFunctions(app, 'europe-west1');
 
-    const signCallable   = fnMod.httpsCallable(FUN, 'signVoucher');
-    const verifyCallable = fnMod.httpsCallable(FUN, 'verifyVoucher');
-    const redeemCallable = fnMod.httpsCallable(FUN, 'redeemVoucher');
+  try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
 
-    return {
-      async register(name,email,pw){
-        const cred = await authMod.createUserWithEmailAndPassword(AUTH, email, pw);
-        await authMod.updateProfile(cred.user, { displayName:name });
-        const uref = fsMod.doc(DB, 'adv_users', cred.user.uid);
-        await fsMod.setDoc(uref, { name, opened:{}, rewards:{}, lastUpdated:new Date().toISOString() });
-        return true;
-      },
-      async login(email,pw){ await authMod.signInWithEmailAndPassword(AUTH, email, pw); return true },
-      async logout(){ await authMod.signOut(AUTH) },
-      onAuth(cb){ return authMod.onAuthStateChanged(AUTH, u=> cb(u?{ uid:u.uid, email:u.email, name:u.displayName }:null)) },
-      async onUserDoc(uid, cb){ const ref=fsMod.doc(DB,'adv_users',uid); return fsMod.onSnapshot(ref, s=> cb(s.data()||{opened:{},rewards:{}})) },
-      async setUserDoc(uid, data){ const ref=fsMod.doc(DB,'adv_users',uid); await fsMod.updateDoc(ref, data) },
-      async onAllUsers(cb){ const q=fsMod.query(fsMod.collection(DB,'adv_users')); return fsMod.onSnapshot(q, qs=> cb(qs.docs.map(d=> ({ uid:d.id, ...(d.data()||{}) })))) },
-      async isAdmin(uid){ const s=await fsMod.getDoc(fsMod.doc(DB,'adv_admins',uid)); return s.exists() },
-      addAdmin(){},
-      async signVoucher({ day, type, nonce }){ const res = await signCallable({ day, type, nonce }); return res.data },
-      async verifyVoucher(code){ const res = await verifyCallable({ code }); return res.data },
-      async redeemVoucher(code){ const res = await redeemCallable({ code }); return res.data }
-    };
+  // Callable-Handles
+  const signCallable   = fnMod.httpsCallable(FUN, 'signVoucher');
+  const verifyCallable = fnMod.httpsCallable(FUN, 'verifyVoucher');
+  const redeemCallable = fnMod.httpsCallable(FUN, 'redeemVoucher');
+
+  // --- Lokaler Fallback: DEMO-Signatur (nur falls Server nicht erreichbar/CORS) ---
+  const FALLBACK_SECRET = 'LOCAL_FALLBACK_ONLY_FOR_TESTS';
+  async function localHmac(payload){
+    const enc=new TextEncoder();
+    const key=await crypto.subtle.importKey('raw', enc.encode(FALLBACK_SECRET), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+    const sig=await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+    const b= btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=+/g,'').replace(/\+/g,'A').replace(/\//g,'B');
+    return b.slice(0,12);
   }
+  function isCorsOrInternal(err){
+    // network TypeError, preflight/CORS oder Firebase internal -> true
+    const msg = (err && (err.message||err.code||String(err))) || '';
+    return msg.includes('internal') || msg.includes('CORS') || msg.includes('Failed to fetch') || msg.includes('net::ERR');
+  }
+
+  return {
+    // --- Auth / Firestore wie gehabt ---
+    async register(name,email,pw){
+      const cred = await authMod.createUserWithEmailAndPassword(AUTH, email, pw);
+      await authMod.updateProfile(cred.user, { displayName:name });
+      const uref = fsMod.doc(DB, 'adv_users', cred.user.uid);
+      await fsMod.setDoc(uref, { name, opened:{}, rewards:{}, lastUpdated:new Date().toISOString() });
+      return true;
+    },
+    async login(email,pw){ await authMod.signInWithEmailAndPassword(AUTH, email, pw); return true },
+    async logout(){ await authMod.signOut(AUTH) },
+    onAuth(cb){ return authMod.onAuthStateChanged(AUTH, u=> cb(u?{ uid:u.uid, email:u.email, name:u.displayName }:null)) },
+    async onUserDoc(uid, cb){ const ref=fsMod.doc(DB,'adv_users',uid); return fsMod.onSnapshot(ref, s=> cb(s.data()||{opened:{},rewards:{}})) },
+    async setUserDoc(uid, data){ const ref=fsMod.doc(DB,'adv_users',uid); await fsMod.updateDoc(ref, data) },
+    async onAllUsers(cb){ const q=fsMod.query(fsMod.collection(DB,'adv_users')); return fsMod.onSnapshot(q, qs=> cb(qs.docs.map(d=> ({ uid:d.id, ...(d.data()||{}) })))) },
+    async isAdmin(uid){ const s=await fsMod.getDoc(fsMod.doc(DB,'adv_admins',uid)); return s.exists() },
+    addAdmin(){},
+
+    // --- Voucher: versuche Cloud Function; fallback bei CORS/Fehlern ---
+    async signVoucher({ day, type, nonce }){
+      try{
+        const res = await signCallable({ day, type, nonce });
+        return res.data; // { code, token }
+      }catch(e){
+        if(!isCorsOrInternal(e)) throw e;
+        // Fallback – lokaler Testcode (sichtbar als TEST)
+        const user = AUTH.currentUser;
+        if(!user) throw new Error('Login erforderlich');
+        const payload = `${user.uid}|${CONFIG.year}|${day}|${type}|${nonce}`;
+        const token = await localHmac(payload);
+        const code  = `${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${token}-TEST`;
+        console.warn('[Voucher] Cloud Function nicht erreichbar – lokaler TEST-Code erzeugt:', code);
+        return { code, token, _fallback:true };
+      }
+    },
+    async verifyVoucher(code){
+      try{
+        const res = await verifyCallable({ code });
+        return res.data;
+      }catch(e){
+        if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). TEST-Codes können lokal nicht serverseitig geprüft werden.' };
+        throw e;
+      }
+    },
+    async redeemVoucher(code){
+      try{
+        const res = await redeemCallable({ code });
+        return res.data;
+      }catch(e){
+        if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). Einlösen im TEST-Modus nicht möglich.' };
+        throw e;
+      }
+    }
+  };
+}
+
   </script>
 </body>
 </html>
