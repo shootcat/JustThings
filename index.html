@@ -165,62 +165,125 @@
   <script type="module">
   /* ===== Dual-Modus: DEMO vs LIVE ===== */
   const IS_DEMO = location.protocol === 'file:';
-  const TEST_UNLOCK_ALL = false;
+  const TEST_UNLOCK_ALL = true;
   const DOOR_IMAGES = true;
 
   /* ===== Config; Sounds; Bilder ===== */
   const CONFIG = {
     bgImage:'assets/bg.jpg',
     sfx:{ open:['assets/sfx/open.mp3'], win:['assets/sfx/win.mp3'], click:['assets/sfx/click.mp3'] },
-    probabilities:{ mealVoucher:0.0025, snackVoucher:0.10 }, /* 0;25 % Essen */
+    probabilities:{ mealVoucher:0.0025, snackVoucher:0.10 }, /* 0,25 % Essen, 10 % Snack (Beispiel) */
     year:2025, startMonth:12, days:24
   };
   document.documentElement.style.setProperty('--bg', `url('${CONFIG.bgImage}')`);
 
-  /* ===== Countdown Overlay Logik (früh definieren) ===== */
+  /* ===== Messages (Jokes/Facts/Links) ===== */
+  /* ===== Messages (Jokes/Facts/Links) ===== */
+const MESSAGES = [
+  {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
+
+  {
+    type: 'joke',
+    text: `Die Familie Schmukler stellt seit Generationen Nägel her. Papa sagt zu seinem Sohn: "Fima, ich war 30 Jahre nicht im Urlaub. Du bleibst als Geschäftsführer hier, ich fahr mit Mama einen Monat weg." – "Papa, ich bin doch Marketing-Mensch, kein Produktioner!" – "Unsere Lager sind voll, verkauf einfach die Nägel."
+
+Zwei Wochen später ein Telegramm: "Papa, komm sofort zurück, die Nägel sind alle!" – "Wie das?" – "Ich hab Werbung gemacht." – Auf dem Plakat: Jesus am Kreuz und der Slogan: "Schmukler-Nägel halten seit 2000 Jahren." – Papa: "Fima! Kein Jesus in der Werbung! Sofort runter!"
+
+Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg sofort her, die Nägel sind schon wieder alle." – "Schon wieder Werbung?!" – "Ja, aber ohne Jesus, versprochen." – Auf dem Plakat: ein leeres Kreuz, ohne Jesus, mit dem Slogan: "Hätten sie nur Schmukler-Nägel gehabt…"`
+  },  // <-- dieses Komma hat gefehlt!
+
+  {type:'fact', text:'Es gibt auf der Erde mehr Sterne am Himmel als Sandkörner auf allen Stränden – aber im beobachtbaren Universum noch mehr Galaxien als Sterne in der Milchstraße.'},
+  {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
+  {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
+  {type:'fact', text:'Bienen erkennen menschliche Gesichter – sie nutzen ähnliche Mustererkennung wie wir.'},
+  {type:'fact', text:'Im Inneren eines Blitzes ist es fünfmal heißer als an der Oberfläche der Sonne.'},
+  {type:'fact', text:'Ein Teelöffel Erde enthält mehr Mikroorganismen als es Menschen auf der Erde gibt.'},
+  {type:'fact', text:'Manche Tiefseefische nutzen Biolumineszenz als Tarnung – sie leuchten ihr Bauchprofil, um von unten unsichtbar zu werden.'},
+  {type:'fact', text:'Saturn hat eine geringere Dichte als Wasser – in einem ausreichend großen Becken würde er theoretisch schwimmen.'},
+  {type:'fact', text:'In Island gibt es keine heimischen Moskitos – die schnellen Temperaturwechsel stören ihren Lebenszyklus.'},
+  {type:'fact', text:'Die ISS umkreist die Erde in ~90 Minuten – Astronauten sehen etwa 16 Sonnenauf- und -untergänge pro Tag.'},
+
+  {type:'link', text:'https://thisissand.com/', label:'🏖️ This is Sand', desc:'Male digitale Sandbilder – meditativ und entspannend.'},
+  {type:'link', text:'https://weirdorconfusing.com/', label:'🛒 Weird or Confusing', desc:'Völlig absurde Produkte aus dem Internet.'},
+  {type:'link', text:'https://stars.chromeexperiments.com/', label:'🌌 100.000 Stars', desc:'Ein interaktiver Flug durch unsere Galaxie.'},
+  {type:'link', text:'https://neal.fun/size-of-space/', label:'🚀 Size of Space', desc:'Vergleiche interaktiv Größen – vom Menschen bis zur Galaxie.'},
+  {type:'link', text:'https://radio.garden/', label:'🌍 Radio Garden', desc:'Höre Live-Radio aus jedem Winkel der Erde – per Globus.'},
+  {type:'link', text:'https://pointerpointer.com/', label:'👆 Pointer Pointer', desc:'Jemand zeigt immer genau auf deine Maus.'},
+  {type:'link', text:'https://patatap.com/', label:'🎵 Patatap', desc:'Erstelle Musik mit der Tastatur – jede Taste hat einen Sound.'},
+
+  {type:'joke', text:'Warum war der Mathebuchautor unglücklich? Weil er zu viele Probleme hatte.'},
+  {type:'joke', text:'Treffen sich zwei Schneeflocken – sagt die eine: „Ich hab das Gefühl, wir treiben hier auseinander.“'},
+  {type:'joke', text:'Was macht ein Pirat am Computer? – Er drückt die Enter-Taste.'},
+  {type:'joke', text:'Warum können Geister so schlecht lügen? – Weil man direkt durch sie hindurchsieht.'},
+  {type:'joke', text:'Ein Photon checkt ins Hotel ein. Der Portier fragt: „Haben Sie Gepäck?“ – „Nein, ich reise licht.“'},
+  {type:'joke', text:'Wie nennt man einen Bumerang, der nicht zurückkommt? – Einen Stock.'},
+  {type:'joke', text:'Warum war der Astronaut schlecht im Smalltalk? – Ihm fehlte einfach die Atmosphäre.'},
+  {type:'joke', text:'Was ist das Lieblingsgetränk von Programmierern? – Java.'},
+  {type:'joke', text:'Warum können Orangen nicht rennen? – Weil sie ausgepresst sind.'},
+  {type:'joke', text:'Was macht ein Keks unter einem Baum? – Krümel!'},
+
+  {type:'link',  text:'https://longdogechallenge.com/', label:'🐕 Long Doge Challenge', desc:'Scrolle endlos und finde heraus, wie lang dein Doge wird.'},
+  {type:'link',  text:'https://mondrianandme.com/',       label:'🎨 Mondrian & Me',        desc:'Male interaktiv im Mondrian-Stil.'},
+  {type:'link',  text:'https://zoomquilt.org/',           label:'🌀 ZoomQuilt',            desc:'Ein hypnotisches, endloses Zoom-Gemälde.'}
+];
+
+
+  /* ===== Countdown Overlay: robust + testbar ===== */
+  function getCountdownTarget(){
+    const sp = new URLSearchParams(location.search);
+    if (sp.has('cd')) { // ?cd=SEKUNDEN
+      const sec = Math.max(1, parseInt(sp.get('cd'), 10) || 0);
+      return new Date(Date.now() + sec * 1000);
+    }
+    if (sp.has('start')) { // ?start=2025-12-01T00:00:00
+      const t = new Date(sp.get('start'));
+      if (!isNaN(t.getTime())) return t;
+    }
+    return new Date(CONFIG.year, CONFIG.startMonth - 1, 1, 0, 0, 0);
+  }
   function startCountdownOverlay(){
     const overlay = document.getElementById('countdownOverlay');
-    const cdTimer = document.getElementById('cdTimer');
-    const cdText  = document.getElementById('cdText');
+    const cdTimer  = document.getElementById('cdTimer');
+    const cdText   = document.getElementById('cdText');
     if(!overlay || !cdTimer || !cdText) return;
-
-    const target = new Date(CONFIG.year, CONFIG.startMonth - 1, 1, 0, 0, 0);
+    const target = getCountdownTarget();
     function fmt2(n){ return String(n).padStart(2,'0') }
-    function remainingParts(ms){
+    function parts(ms){
       const s = Math.max(0, Math.floor(ms/1000));
-      const days = Math.floor(s / 86400);
-      const hrs  = Math.floor((s % 86400) / 3600);
-      const mins = Math.floor((s % 3600) / 60);
-      const secs = s % 60;
-      return { days, hrs, mins, secs };
+      const d = Math.floor(s/86400);
+      const h = Math.floor((s%86400)/3600);
+      const m = Math.floor((s%3600)/60);
+      const c = s%60;
+      return { d,h,m,c };
     }
     function render(){
       const now = new Date();
-      if (now >= target){ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); return }
-      const ms = target - now;
-      const { days, hrs, mins, secs } = remainingParts(ms);
-      cdTimer.textContent = `${days} Tage; ${fmt2(hrs)}:${fmt2(mins)}:${fmt2(secs)}`;
-      cdText.innerHTML = `In <strong>${days} ${days===1?'Tag':'Tagen'}</strong> geht’s hier los in deinem persönlichen Adventskalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere <strong>Süßigkeiten</strong> sowie der Chance auf eine kostenlose <strong>Freitagsmahlzeit</strong>`;
+      if (now >= target){
+        overlay.style.display = 'none';
+        overlay.setAttribute('aria-hidden','true');
+        return;
+      }
+      const { d,h,m,c } = parts(target - now);
+      cdTimer.textContent = `${d} Tage; ${fmt2(h)}:${fmt2(m)}:${fmt2(c)}`;
+      cdText.innerHTML = `In <strong>${d} ${d===1?'Tag':'Tagen'}</strong> geht’s hier los in deinem persönlichen Adventskalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere <strong>Süßigkeiten</strong> und einer kostenlosen <strong>Freitagsmahlzeit</strong>.`;
       overlay.style.display = 'flex';
       overlay.setAttribute('aria-hidden','false');
     }
     render();
-    if(window.__cdInt) clearInterval(window.__cdInt);
+    if (window.__cdInt) clearInterval(window.__cdInt);
     window.__cdInt = setInterval(render, 1000);
   }
-  /* Countdown nach Config setzen */
   startCountdownOverlay();
-
+  window.addEventListener('focus', startCountdownOverlay);
 
   /* ===== Partikel Canvas; performant ===== */
   const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
     const DPR=Math.min(window.devicePixelRatio||1,1.5); const MAX=200; let w=0,h=0,flakes=[],run=true,last=0;
     function resize(){ const r=cvs.getBoundingClientRect(); w=(r.width*DPR)|0; h=(r.height*DPR)|0; cvs.width=w; cvs.height=h; const n=Math.min(MAX,(w*h/45000)|0); flakes=new Array(n).fill(0).map(()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*2.5*DPR,vx:(-0.12+Math.random()*0.24)*DPR,vy:(0.2+Math.random()*0.6)*DPR,a:0.3+Math.random()*0.6,tw:Math.random()*6.28})) }
-    function step(ts){ if(!run) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts; const ctx2=ctx; ctx2.clearRect(0,0,w,h);
+    function step(ts){ if(!run) return; if(ts-last<33){ requestAnimationFrame(step); return } last=ts; ctx.clearRect(0,0,w,h);
       for(const f of flakes){ f.tw+=.01; const wob=Math.sin(f.tw)*.25*DPR; f.x+=f.vx+wob; f.y+=f.vy;
         if(f.y-f.r>h){ f.y=-f.r; f.x=Math.random()*w } if(f.x<-5*DPR){ f.x=w+5*DPR } if(f.x>w+5*DPR){ f.x=-5*DPR }
-        ctx2.beginPath(); ctx2.globalAlpha=f.a; ctx2.fillStyle='#fff'; ctx2.arc(f.x,f.y,f.r,0,6.283); ctx2.fill();
-      } ctx2.globalAlpha=1; requestAnimationFrame(step) }
+        ctx.beginPath(); ctx.globalAlpha=f.a; ctx.fillStyle='#fff'; ctx.arc(f.x,f.y,f.r,0,6.283); ctx.fill();
+      } ctx.globalAlpha=1; requestAnimationFrame(step) }
     window.addEventListener('resize', ()=>{ clearTimeout(window.__t); window.__t=setTimeout(resize,150) });
     document.addEventListener('visibilitychange', ()=>{ run=!document.hidden; if(run) requestAnimationFrame(step) });
     resize(); requestAnimationFrame(step); return { stop(){run=false}, start(){run=true; requestAnimationFrame(step)} };
@@ -236,37 +299,42 @@
   const admCode=document.getElementById('admCode'); const admMsg=document.getElementById('admMsg'); const btnVerify=document.getElementById('btnVerify'); const btnRedeem=document.getElementById('btnRedeem');
   const demoAdminHint=document.getElementById('demoAdminHint');
 
-  const MESSAGES = [
-    {type:'quote', text:'Teamwork macht Traumwerk; danke dass du Teil davon bist'},
-    {type:'joke',  text:'Ich habe den Weihnachtsbaum gefragt; wie es ihm geht; er meinte; ganz schön beleuchtet'},
-    {type:'quote', text:'Ein kleiner Kaffee; ein großes Lächeln; ein guter Tag'},
-    {type:'joke',  text:'IT-Weihnachtswitz; Warum mag der Server Schnee; wegen der coolen Caches'},
-    {type:'quote', text:'Du bist heute das hellste Licht im Werk'},
-    {type:'joke',  text:'Lieblingssport im Dezember; Curling; weil aufräumen später geht'}
-  ];
+  /* ===== Single source of truth: state ===== */
+  let state = { opened:{}, rewards:{} };
+  let unsubUser=null, unsubBoard=null, lastOpenedJSON='';
 
-  /* ===== Dienst-Abstraktion; LIVE lädt Firebase dynamisch; DEMO nutzt localStorage ===== */
+  /* ===== Dienst-Abstraktion (DEMO vs LIVE) ===== */
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
 
   /* ===== Auth UI ===== */
-  btnReg.onclick = async ()=>{ authMsg.textContent=''; const name=nameInp.value.trim(); const email=emailInp.value.trim(); const pw=pwInp.value;
-    if(!name || !email || pw.length<6){ authMsg.textContent='Bitte Name; E-Mail; Passwort (≥6 Zeichen)'; return }
-    const ok = await svc.register(name,email,pw).catch(e=>{ authMsg.textContent=e.message||String(e); return false }); if(ok!==false) authMsg.textContent='Registrierung ok';
+  btnReg.onclick = async ()=>{
+    authMsg.textContent='';
+    const name=nameInp.value.trim(); const email=emailInp.value.trim(); const pw=pwInp.value;
+    if(!name || !email || pw.length<6){ authMsg.textContent='Bitte Name, E-Mail, Passwort (≥6 Zeichen)'; return }
+    try{ await svc.register(name,email,pw); authMsg.textContent='Registrierung ok'; }
+    catch(e){ authMsg.textContent=e.message||String(e) }
   };
-  btnLogin.onclick = async ()=>{ authMsg.textContent=''; const email=emailInp.value.trim(); const pw=pwInp.value;
+  btnLogin.onclick = async ()=>{
+    authMsg.textContent='';
+    const email=emailInp.value.trim(); const pw=pwInp.value;
     if(!email || !pw){ authMsg.textContent='Bitte E-Mail und Passwort eingeben'; return }
-    await svc.login(email,pw).catch(e=> authMsg.textContent=e.message||String(e));
+    try{ await svc.login(email,pw) } catch(e){ authMsg.textContent=e.message||String(e) }
   };
   btnSignout.onclick = ()=> svc.logout();
 
-  let unsubUser=null, unsubBoard=null, lastOpenedJSON='';
+  /* ===== Auth Listener ===== */
   svc.onAuth(async user=>{
     if(user){
       authPanel.style.display='none'; kalPanel.style.display=''; btnSignout.style.display='';
       userBox.textContent=user.name||user.email; whoEl.textContent=user.name||'Nutzer';
+
       if(unsubUser) unsubUser(); if(unsubBoard) unsubBoard();
 
-      unsubUser = await svc.onUserDoc(user.uid, data=>{ state=data||{opened:{},rewards:{}}; renderGrid(user) });
+      unsubUser = await svc.onUserDoc(user.uid, data=>{
+        state = data || { opened:{}, rewards:{} };
+        renderGrid(user);
+      });
+
       const admin = await svc.isAdmin(user.uid);
       const adminTools = document.getElementById('adminTools');
       if(admin){
@@ -274,8 +342,8 @@
         unsubBoard = await svc.onAllUsers(qs=> renderBoard(qs));
       } else { boardPanel.style.display='none'; if(adminTools) adminTools.style.display='none' }
 
-      const now=new Date(); const isDec=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
-      if(!isDec) _toast('Hinweis; Türen sind bis 01.12. gesperrt');
+      const now=new Date(); const isStart=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
+      if(!isStart) _toast('Hinweis: Türen sind bis zum Startmonat gesperrt');
       startCountdownOverlay();
       if(IS_DEMO){ showDemoAdminToggle(user) }
     } else {
@@ -285,10 +353,8 @@
     }
   });
 
-  /* ===== State; Render ===== */
-  let state = { opened:{}, rewards:{} };
+  /* ===== Render Grid ===== */
   function today(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()} }
-
   function renderGrid(user){
     const snapJSON = JSON.stringify(state.opened);
     if(snapJSON===lastOpenedJSON) return; lastOpenedJSON=snapJSON;
@@ -298,8 +364,8 @@
       const n=order[i]; const btn=document.createElement('button');
       btn.className='door';
       btn.innerHTML=`<div class="emoji">${n%6===0?'🎁':n%5===0?'⭐':n%4===0?'🕯️':n%3===0?'❄️':n%2===0?'🍪':'🎄'}</div><span class="num">${n}</span>`;
-      const isDec=m===CONFIG.startMonth && y>=CONFIG.year;
-      const lock=TEST_UNLOCK_ALL?false:(!isDec?true:n>day);
+      const isStart=m===CONFIG.startMonth && y>=CONFIG.year;
+      const lock=TEST_UNLOCK_ALL?false:(!isStart?true:n>day);
       if(lock) btn.classList.add('locked');
       const opened=!!state.opened[n];
       if(opened){
@@ -312,6 +378,7 @@
     }
   }
 
+  /* ===== Tür öffnen ===== */
   async function openDoor(user, dayIndex){
     if(state.opened[dayIndex]){ showReward(dayIndex, state.rewards[dayIndex], user); return }
     const seed = hash(`${user.uid}|${CONFIG.year}|${dayIndex}`); const rng=mul32(seed); const roll=rng();
@@ -335,7 +402,7 @@
         return;
       }
     } else {
-      const choices=MESSAGES; const msg=choices[(rng()*choices.length)|0]||{type:'quote', text:'Schönen Advent; du machst das super'};
+      const msg=getMessageFor(user, dayIndex)||{type:'quote', text:'Schönen Advent – du machst das super!'};
       reward = { kind:'message', payload: msg };
       const opened = {...state.opened, [dayIndex]:true};
       const rewards = {...state.rewards, [dayIndex]: reward};
@@ -344,9 +411,12 @@
     }
   }
 
+  /* ===== Reward Modal ===== */
   function showReward(dayIndex, reward, user){
     document.getElementById('modalTitle').textContent=`Türchen ${dayIndex}`;
-    let html=''; const hero = DOOR_IMAGES ? `<div style="position:relative; height:180px; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid var(--border)"><img src="${doorImagePath(dayIndex)}" alt="Türchen Bild" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover"/></div>` : '';
+    let html='';
+    const hero = DOOR_IMAGES ? `<div style="position:relative; height:180px; border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid var(--border)"><img src="${doorImagePath(dayIndex)}" alt="Türchen Bild" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover"/></div>` : '';
+
     if(reward.kind==='voucher'){
       const v=reward.payload;
       html += hero + `<div class="reward"><div class="icon">🎟️</div><div><h3>${v.title}</h3><div class="muted">${v.desc}</div>
@@ -362,12 +432,22 @@
           <button class="btn" onclick="navigator.clipboard.writeText('${v.code}').then(()=>window._toast('Code kopiert'))">Code kopieren</button>
         </div></div></div>`;
     } else {
-      const m=reward.payload; const emoji = m.type==='joke' ? '🎅' : '✨';
-      html += hero + `<div class="reward"><div class="icon">${emoji}</div><div><h3>${m.type==='joke'?'Witz des Tages':'Botschaft des Tages'}</h3><div>${esc(m.text)}</div></div></div>`;
+      const m = reward.payload;
+      let emoji = '✨', title = 'Botschaft des Tages', content = esc(m.text);
+      if (m.type === 'joke') { emoji = '🎅'; title = 'Witz des Tages' }
+      else if (m.type === 'fact') { emoji = '💡'; title = 'Fakt des Tages' }
+      else if (m.type === 'link') {
+        emoji = '🌐'; title = 'Zufällige Website';
+        const safeLabel = esc(m.label || m.text);
+        const safeDesc = m.desc ? `<div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(m.desc)}</div>` : '';
+        content = `<a href="${m.text}" target="_blank" style="color:#6cf;font-weight:600;text-decoration:none">${safeLabel}</a>${safeDesc}`;
+      }
+      html += hero + `<div class="reward"><div class="icon">${emoji}</div><div><h3>${title}</h3><div>${content}</div></div></div>`;
     }
     document.getElementById('modalBody').innerHTML=html; openModal();
   }
 
+  /* ===== Board ===== */
   function renderBoard(users){
     const rows = users.map(u=>({ name:u.name||'Nutzer', count:Object.values(u.opened||{}).filter(Boolean).length })).sort((a,b)=> b.count-a.count || a.name.localeCompare(b.name));
     let html='<table><thead><tr><th>Name</th><th>Geöffnet</th></tr></thead><tbody>';
@@ -383,7 +463,7 @@
     try{ const res = await svc.redeemVoucher(code); if(res.ok){ admMsg.textContent='Erfolgreich eingelöst' } }catch(e){ admMsg.textContent=e.message||String(e) }
   };
 
-  /* ===== DEMO: Admin-Button anzeigen ===== */
+  /* ===== Demo Admin Toggle ===== */
   function showDemoAdminToggle(user){
     if(!IS_DEMO) return;
     demoAdminHint.style.display='';
@@ -396,7 +476,7 @@
   /* ===== Utilities ===== */
   window._printVoucher=function(title,desc,code,type,holder,sign){
     const area=document.getElementById('printArea');
-    area.innerHTML=`<div class="print-card"><h2>${title}</h2><div>${desc}</div><p><strong>Inhaber; </strong>${holder}</p><p><strong>Code; </strong>${code}</p><p><strong>Typ; </strong>${type}</p><p class="small">Gültig bis 31.12.${CONFIG.year}; einmalig; nicht übertragbar; nur intern</p><p class="small">Signatur; ${sign}</p></div>`;
+    area.innerHTML=`<div class="print-card"><h2>${title}</h2><div>${desc}</div><p><strong>Inhaber: </strong>${holder}</p><p><strong>Code: </strong>${code}</p><p><strong>Typ: </strong>${type}</p><p class="small">Gültig bis 31.12.${CONFIG.year}; einmalig; nicht übertragbar; nur intern</p><p class="small">Signatur: ${sign}</p></div>`;
     window.print();
   };
   window._toast = function(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1600) };
@@ -407,15 +487,29 @@
   function randHex(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('') }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0 } return h>>>0 }
-  function esc(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      "\"":"&quot;",
-      "'":"&#39;"
-    }[m]));
+
+  // Erzeuge pro Nutzer+Jahr eine deterministische, zufällige Reihenfolge der MESSAGES
+function shuffledMessagesFor(user){
+  const seed = hash(`${user.uid}|${CONFIG.year}|MSGPOOL`);
+  const rng = mul32(seed);
+  const arr = MESSAGES.slice(); // Kopie
+  // Fisher-Yates mit Seed
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
+  return arr;
+}
+
+// Liefert die (quasi-)einmalige Nachricht für den Tag
+function getMessageFor(user, dayIndex){
+  const pool = shuffledMessagesFor(user);
+  // dayIndex beginnt bei deinen Türen bei 1..24 – Index 0-basiert:
+  const idx = (dayIndex - 1) % pool.length;
+  return pool[idx];
+}
+
+  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
   function signatureFor(uid){ const id = Math.abs((uid.split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)))%10000; return `SIG-${id.toString().padStart(4,'0')}` }
   function playSFX(kind){ const list=CONFIG.sfx[kind]||[]; if(!list.length) return; const url=list[(Math.random()*list.length)|0]; const a=new Audio(url); a.volume=.9; a.play().catch(()=>{}) }
   function doorImagePath(day){ const n=String(day).padStart(2,'0'); return `assets/doors/${n}.jpg` }
@@ -423,8 +517,8 @@
 
   btnHow.onclick=()=>{ const body=`<div class="muted">Hinweise</div><ul>
     <li>DEMO-Modus speichert lokal; LIVE nutzt Firebase</li>
-    <li>0;25 % Essen; 5 % Snack; druckbare Gutscheine</li>
-    <li>Admin kann Codes prüfen; einlösen</li></ul>`;
+    <li>${(CONFIG.probabilities.mealVoucher*100).toFixed(2)} % Essen; ${(CONFIG.probabilities.snackVoucher*100).toFixed(2)} % Snack</li>
+    <li>Admin kann Codes prüfen & einlösen</li></ul>`;
     document.getElementById('modalBody').innerHTML=body; document.getElementById('modalTitle').textContent='Info'; openModal();
   };
 
