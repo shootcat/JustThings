@@ -81,13 +81,21 @@
   .door .emoji{position:absolute; left:10px; top:8px; font-size: 18px; opacity: 0.8} 
   .door .num{position:relative; z-index:2; font-size: 32px;}
   
-  /* Bild Thumbnail auf geöffneter Tür (optional, dezent im Hintergrund) */
+  /* Bild Thumbnail auf geöffneter Tür (jetzt hell und klar) */
   .door.opened img.thumb{
     position:absolute; inset:0; width:100%; height:100%; object-fit:cover; 
-    filter: brightness(0.4) grayscale(0.4); /* Abgedunkelt, Fokus auf Modal */
-    z-index: 0; opacity: 0.6;
+    filter: none; /* Keine Abdunklung mehr */
+    z-index: 0; opacity: 1; /* Volle Sichtbarkeit */
+    transition: transform 0.3s;
   }
-  .door.opened .num { opacity: 0.5; } /* Nummer tritt in den Hintergrund */
+  /* Leichter Zoom-Effekt beim Hovern über offene Tür */
+  .door.opened:hover img.thumb { transform: scale(1.05); }
+
+  /* Nummer tritt in den Hintergrund, damit das Bild wirkt, aber bleibt lesbar durch Schatten */
+  .door.opened .num { 
+    opacity: 0.7; 
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
 
   /* Tag 24 Special */
   .door.day-24 {
