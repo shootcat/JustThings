@@ -15,51 +15,77 @@
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:#0b0f17; display:flex; flex-direction:column; min-height:100vh; overflow-x:hidden}
+  
+  /* Verbesserter Hintergrund-Fallback, falls Bild nicht lädt */
+  .bgimg{position:fixed; inset:0; background:#0b0f17 radial-gradient(circle at 50% 0%, #1a253a, #0b0f17); background-image:var(--bg); background-position:center; background-size:cover; filter:blur(2px)}
+  
   header{backdrop-filter:blur(10px); background:linear-gradient(180deg, rgba(12,18,28,.75), rgba(12,18,28,.3)); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:5}
   .bar{display:flex; align-items:center; gap:12px; padding:12px 20px}
   .logo{width:48px; height:48px; border-radius:14px; position:relative; background:conic-gradient(from 0deg, rgba(255,77,90,.45), rgba(255,215,106,.45), rgba(93,216,255,.45), rgba(53,224,122,.45), rgba(255,77,90,.45)); box-shadow:0 0 30px rgba(255,215,106,.25) inset, 0 0 40px rgba(93,216,255,.18) inset}
   .logo:after{content:"🎄"; position:absolute; inset:0; display:grid; place-items:center; font-size:22px}
   h1{font-size:22px; letter-spacing:.5px; margin:0} .spacer{flex:1}
+  
   .btn{cursor:pointer; border:1px solid var(--border); background:var(--glass); color:var(--text); padding:10px 14px; border-radius:12px; transition:.2s; font-weight:700}
   .btn:hover{background:var(--glass-strong); transform:translateY(-1px)}
-  .btn.gold{border-color:rgba(255,215,106,.5); box-shadow:0 0 20px rgba(255,215,106,.25) inset}
+  .btn.gold{border-color:rgba(255,215,106,.5); box-shadow:0 0 20px rgba(255,215,106,.25) inset; color: var(--gold)}
+  
   .wrap{width:100%; max-width:1200px; margin:0 auto; padding:20px; flex:1 0 auto; position:relative; z-index:3}
-  .bgimg{position:fixed; inset:0; background:#0b0f17 center/cover no-repeat fixed; background-image:var(--bg); filter:blur(2px)}
   .panel{background:var(--glass); border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:0 8px 32px rgba(0,0,0,.25)}
+  
   .auth{max-width:680px; margin:28px auto; text-align:left} .row{display:flex; gap:10px; flex-wrap:wrap}
   .input{flex:1; min-width:220px; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05); color:#fff}
   label{display:block; margin:8px 0 6px 2px; color:var(--gold); font-weight:600}
   .hint{color:var(--muted); font-size:13px}
-  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
-  @media (min-width:760px){ .grid{grid-template-columns:repeat(6,1fr)} }
-  @media (min-width:1100px){ .grid{grid-template-columns:repeat(8,1fr)} }
-  .door{position:relative; height:92px; border-radius:16px; overflow:hidden; cursor:pointer; border:2px solid transparent; background:
+  
+  /* Optimiertes Grid: Nutzt auto-fill für bessere Responsivität ohne viele Media Queries */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:14px}
+  
+  .door{position:relative; height:110px; border-radius:16px; overflow:hidden; cursor:pointer; border:2px solid transparent; background:
     linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
     radial-gradient(circle at 20% -10%, rgba(255,77,90,.35), transparent 40%),
     radial-gradient(circle at 120% 20%, rgba(93,216,255,.25), transparent 40%),
     radial-gradient(circle at 80% 120%, rgba(255,215,106,.25), transparent 40%),
     radial-gradient(circle at -10% 80%, rgba(53,224,122,.25), transparent 40%);
-    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:26px; color:var(--text); text-shadow:0 2px 10px rgba(0,0,0,.35)}
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:26px; color:var(--text); text-shadow:0 2px 10px rgba(0,0,0,.35); transition: transform 0.2s}
+  
+  .door:hover { transform: scale(1.02); }
   .door.locked{opacity:.6; cursor:not-allowed; border-color:rgba(255,255,255,.06)}
   .door.opened{border-color:rgba(93,216,255,.7); box-shadow:0 0 0 6px rgba(93,216,255,.12) inset}
   .door .badge{position:absolute; top:8px; right:8px; background:rgba(255,215,106,.25); border:1px solid var(--border); padding:2px 8px; border-radius:10px; font-size:11px}
   .door .emoji{position:absolute; left:10px; top:8px} .door .num{position:relative; z-index:2}
   .door.opened .num{display:none}
+  
   .door.opened::after{content:""; position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.18))}
   .door.opened img.thumb{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.02)}
+
+  /* Shake Animation für gesperrte Türen */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px) rotate(-2deg); }
+    75% { transform: translateX(4px) rotate(2deg); }
+  }
+  .shake { animation: shake 0.4s ease-in-out; }
+
   .footer{padding:20px; text-align:center; color:var(--muted); border-top:1px solid var(--border)}
-  .modal-backdrop{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,8,12,.55); z-index:50}
-  .modal{width:min(720px, 92vw); background:rgba(14,18,27,.92); border:1px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.5)}
+  .modal-backdrop{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,8,12,.75); z-index:50; backdrop-filter: blur(4px);}
+  .modal{width:min(720px, 92vw); background:rgba(20,24,35,.95); border:1px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.5); transform: scale(0.95); transition: transform 0.2s opacity 0.2s; opacity: 0;}
+  .modal.active { transform: scale(1); opacity: 1; }
+
   .modal .head{display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border)} .modal .body{padding:18px}
+  
   .reward{display:flex; gap:16px; align-items:flex-start}
-  .reward .icon{width:70px; height:70px; border-radius:16px; display:grid; place-items:center; font-size:34px; background:linear-gradient(135deg, rgba(93,216,255,.30), rgba(255,215,106,.30)); border:1px solid var(--border)}
+  .reward .icon{width:70px; height:70px; border-radius:16px; display:grid; place-items:center; font-size:34px; background:linear-gradient(135deg, rgba(93,216,255,.30), rgba(255,215,106,.30)); border:1px solid var(--border); flex-shrink: 0;}
+  
   .muted{color:var(--muted)}
   .voucher{margin-top:14px; padding:14px; border:1px dashed var(--gold); border-radius:14px; background:rgba(255,215,106,.10)}
   .voucher .line{display:flex; gap:10px; align-items:center; margin-top:8px} .voucher .label{width:120px; color:var(--muted)}
+  
   .print-area{display:none}
   @media print{ header,.wrap,.footer{display:none} .print-area{display:block; padding:28px; font-family:Inter, Arial, sans-serif} .print-card{border:2px dashed #333; border-radius:12px; padding:20px} .print-card h2{margin:0 0 10px 0} .print-card .small{color:#444} }
-  .toast{position:fixed; bottom:20px; right:20px; background:rgba(25,32,48,.9); color:#fff; border:1px solid var(--border); padding:10px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); opacity:0; transform:translateY(10px); transition:.25s}
+  
+  .toast{position:fixed; bottom:20px; right:20px; background:rgba(25,32,48,.95); color:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35); opacity:0; transform:translateY(10px); transition:.25s; z-index: 100}
   .toast.show{opacity:1; transform:translateY(0)}
+  
   table{width:100%; border-collapse:collapse} th,td{padding:10px; border-bottom:1px solid var(--border)} th{text-align:left; color:var(--gold)}
 
   /* Countdown Overlay */
@@ -78,6 +104,7 @@
 <body>
   <div class="bgimg" aria-hidden="true"></div>
   <canvas id="fx" aria-hidden="true" style="position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:1"></canvas>
+  <canvas id="confetti" aria-hidden="true" style="position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:60"></canvas>
 
   <header>
     <div class="bar">
@@ -115,19 +142,20 @@
     <!-- Kalender -->
     <div class="panel" id="kalPanel" style="display:none">
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px">
-        <div>Willkommen; <strong id="who">–</strong></div>
-        <div class="muted">Öffne täglich ein Türchen; vergangene Tage sind nachholbar</div>
+        <div>Willkommen, <strong id="who">–</strong></div>
+        <div class="muted">Öffne täglich ein Türchen. Vergangene Tage sind nachholbar.</div>
       </div>
+      <div id="devWarning" style="display:none; color: var(--gold); margin-bottom: 10px; font-size: 13px;">⚠️ Simulations-Modus aktiv: Datum überschrieben</div>
       <div class="grid" id="grid"></div>
     </div>
 
     <!-- Admin Übersicht -->
     <div class="panel" id="boardPanel" style="display:none; margin-top:16px">
-      <h3>Übersicht Team; geöffnete Türchen</h3>
+      <h3>Übersicht Team / Geöffnete Türchen</h3>
       <div class="muted" style="margin-bottom:8px">Nur Admins sehen diese Übersicht</div>
       <div id="board"></div>
       <div id="adminTools" style="margin-top:16px; display:none">
-        <h4>Voucher prüfen; einlösen</h4>
+        <h4>Voucher prüfen / einlösen</h4>
         <div class="row" style="align-items:center">
           <input id="admCode" class="input" placeholder="Code; z. B. M-07-ABCDEFGH..." style="min-width:260px"/>
           <button class="btn" id="btnVerify">Prüfen</button>
@@ -135,15 +163,15 @@
         </div>
         <div id="admMsg" class="hint" style="margin-top:8px"></div>
       </div>
-      <div id="demoAdminHint" class="hint" style="margin-top:8px; display:none">DEMO; du kannst dich als Admin markieren; Button erscheint oben rechts</div>
+      <div id="demoAdminHint" class="hint" style="margin-top:8px; display:none">DEMO: Du kannst dich als Admin markieren (Button erscheint oben rechts)</div>
     </div>
   </div>
 
-  <div class="footer">© 2025 GAB Neumann GmbH; interner Spaßkalender</div>
+  <div class="footer">© 2025 GAB Neumann GmbH | Interner Spaßkalender</div>
 
   <!-- Modal -->
   <div class="modal-backdrop" id="backdrop" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modal">
+    <div class="modal" id="modalBox">
       <div class="head"><strong id="modalTitle">Türchen</strong><div class="spacer"></div><button class="btn" id="closeModal">Schließen</button></div>
       <div class="body" id="modalBody"></div>
     </div>
@@ -154,7 +182,7 @@
     <div class="box">
       <div class="timer" id="cdTimer">00 Tage; 00:00:00</div>
       <div class="msg" id="cdText">
-        In <strong>XXX</strong> geht’s hier los in deinem persönlichen Kalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere Snacks sowie der Chance auf eine kostenlose <strong>Freitagsmahlzeit</strong>
+        In <strong>XXX</strong> geht’s hier los in deinem persönlichen Kalender.
       </div>
     </div>
   </div>
@@ -163,89 +191,105 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-  /* ===== Dual-Modus: DEMO vs LIVE ===== */
+  /* ===== Konfiguration ===== */
   const IS_DEMO = location.protocol === 'file:';
-  const TEST_UNLOCK_ALL = false;
-  const DOOR_IMAGES = true;
+  const DOOR_IMAGES = true; // Bilder anzeigen oder nur Text
 
-  /* ===== Config; Sounds; Bilder ===== */
+  // URL Parameter für Testing: ?sim_date=2025-12-05
+  const urlParams = new URLSearchParams(window.location.search);
+  const simDateParam = urlParams.get('sim_date');
+
   const CONFIG = {
     bgImage:'assets/bg.jpg',
     sfx:{ open:['assets/sfx/open.mp3'], win:['assets/sfx/win.mp3'], click:['assets/sfx/click.mp3'] },
-    probabilities:{ mealVoucher:0.0025, snackVoucher:0.10 }, /* 0,25 % Essen, 10 % Snack (Beispiel) */
+    probabilities:{ mealVoucher:0.0025, snackVoucher:0.10 }, 
     year:2025, startMonth:12, days:24
   };
   document.documentElement.style.setProperty('--bg', `url('${CONFIG.bgImage}')`);
 
-  /* ===== Messages (Jokes/Facts/Links) ===== */
-  /* ===== Messages (Jokes/Facts/Links) ===== */
-const MESSAGES = [
-  {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
-
-  {
-    type: 'joke',
-    text: `Die Familie Schmukler stellt seit Generationen Nägel her. Papa sagt zu seinem Sohn: "Fima, ich war 30 Jahre nicht im Urlaub. Du bleibst als Geschäftsführer hier, ich fahr mit Mama einen Monat weg." – "Papa, ich bin doch Marketing-Mensch, kein Produktioner!" – "Unsere Lager sind voll, verkauf einfach die Nägel."
-
-Zwei Wochen später ein Telegramm: "Papa, komm sofort zurück, die Nägel sind alle!" – "Wie das?" – "Ich hab Werbung gemacht." – Auf dem Plakat: Jesus am Kreuz und der Slogan: "Schmukler-Nägel halten seit 2000 Jahren." – Papa: "Fima! Kein Jesus in der Werbung! Sofort runter!"
-
-Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg sofort her, die Nägel sind schon wieder alle." – "Schon wieder Werbung?!" – "Ja, aber ohne Jesus, versprochen." – Auf dem Plakat: ein leeres Kreuz, ohne Jesus, mit dem Slogan: "Hätten sie nur Schmukler-Nägel gehabt…"`
-  },  // <-- dieses Komma hat gefehlt!
-
-  {type:'fact', text:'Es gibt auf der Erde mehr Sterne am Himmel als Sandkörner auf allen Stränden – aber im beobachtbaren Universum noch mehr Galaxien als Sterne in der Milchstraße.'},
-  {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
-  {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
-  {type:'fact', text:'Bienen erkennen menschliche Gesichter – sie nutzen ähnliche Mustererkennung wie wir.'},
-  {type:'fact', text:'Im Inneren eines Blitzes ist es fünfmal heißer als an der Oberfläche der Sonne.'},
-  {type:'fact', text:'Ein Teelöffel Erde enthält mehr Mikroorganismen als es Menschen auf der Erde gibt.'},
-  {type:'fact', text:'Manche Tiefseefische nutzen Biolumineszenz als Tarnung – sie leuchten ihr Bauchprofil, um von unten unsichtbar zu werden.'},
-  {type:'fact', text:'Saturn hat eine geringere Dichte als Wasser – in einem ausreichend großen Becken würde er theoretisch schwimmen.'},
-  {type:'fact', text:'In Island gibt es keine heimischen Moskitos – die schnellen Temperaturwechsel stören ihren Lebenszyklus.'},
-  {type:'fact', text:'Die ISS umkreist die Erde in ~90 Minuten – Astronauten sehen etwa 16 Sonnenauf- und -untergänge pro Tag.'},
-
-  {type:'link', text:'https://thisissand.com/', label:'🏖️ This is Sand', desc:'Male digitale Sandbilder – meditativ und entspannend.'},
-  {type:'link', text:'https://weirdorconfusing.com/', label:'🛒 Weird or Confusing', desc:'Völlig absurde Produkte aus dem Internet.'},
-  {type:'link', text:'https://stars.chromeexperiments.com/', label:'🌌 100.000 Stars', desc:'Ein interaktiver Flug durch unsere Galaxie.'},
-  {type:'link', text:'https://neal.fun/size-of-space/', label:'🚀 Size of Space', desc:'Vergleiche interaktiv Größen – vom Menschen bis zur Galaxie.'},
-  {type:'link', text:'https://radio.garden/', label:'🌍 Radio Garden', desc:'Höre Live-Radio aus jedem Winkel der Erde – per Globus.'},
-  {type:'link', text:'https://pointerpointer.com/', label:'👆 Pointer Pointer', desc:'Jemand zeigt immer genau auf deine Maus.'},
-  {type:'link', text:'https://patatap.com/', label:'🎵 Patatap', desc:'Erstelle Musik mit der Tastatur – jede Taste hat einen Sound.'},
-
-  {type:'joke', text:'Warum war der Mathebuchautor unglücklich? Weil er zu viele Probleme hatte.'},
-  {type:'joke', text:'Treffen sich zwei Schneeflocken – sagt die eine: „Ich hab das Gefühl, wir treiben hier auseinander.“'},
-  {type:'joke', text:'Was macht ein Pirat am Computer? – Er drückt die Enter-Taste.'},
-  {type:'joke', text:'Warum können Geister so schlecht lügen? – Weil man direkt durch sie hindurchsieht.'},
-  {type:'joke', text:'Ein Photon checkt ins Hotel ein. Der Portier fragt: „Haben Sie Gepäck?“ – „Nein, ich reise licht.“'},
-  {type:'joke', text:'Wie nennt man einen Bumerang, der nicht zurückkommt? – Einen Stock.'},
-  {type:'joke', text:'Warum war der Astronaut schlecht im Smalltalk? – Ihm fehlte einfach die Atmosphäre.'},
-  {type:'joke', text:'Was ist das Lieblingsgetränk von Programmierern? – Java.'},
-  {type:'joke', text:'Warum können Orangen nicht rennen? – Weil sie ausgepresst sind.'},
-  {type:'joke', text:'Was macht ein Keks unter einem Baum? – Krümel!'},
-
-  {type:'link',  text:'https://longdogechallenge.com/', label:'🐕 Long Doge Challenge', desc:'Scrolle endlos und finde heraus, wie lang dein Doge wird.'},
-  {type:'link',  text:'https://mondrianandme.com/',       label:'🎨 Mondrian & Me',        desc:'Male interaktiv im Mondrian-Stil.'},
-  {type:'link',  text:'https://zoomquilt.org/',           label:'🌀 ZoomQuilt',            desc:'Ein hypnotisches, endloses Zoom-Gemälde.'}
-];
-
-
-  /* ===== Countdown Overlay: robust + testbar ===== */
-  function getCountdownTarget(){
-    const sp = new URLSearchParams(location.search);
-    if (sp.has('cd')) { // ?cd=SEKUNDEN
-      const sec = Math.max(1, parseInt(sp.get('cd'), 10) || 0);
-      return new Date(Date.now() + sec * 1000);
+  /* ===== Zeitreise-Funktion (für Testing) ===== */
+  function getCurrentDate() {
+    if (simDateParam) {
+      const sim = new Date(simDateParam);
+      if (!isNaN(sim.getTime())) {
+        // Uhrzeit auf aktuelle Zeit setzen, damit Countdown logisch bleibt, aber Datum fixieren
+        const now = new Date();
+        sim.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        return sim;
+      }
     }
-    if (sp.has('start')) { // ?start=2025-12-01T00:00:00
-      const t = new Date(sp.get('start'));
-      if (!isNaN(t.getTime())) return t;
+    return new Date();
+  }
+
+  if(simDateParam) {
+     document.getElementById('devWarning').style.display = 'block';
+     document.getElementById('devWarning').innerText = `⚠️ Simulations-Modus: Es ist heute virtuell der ${simDateParam}`;
+  }
+
+  /* ===== Messages ===== */
+  const MESSAGES = [
+    {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
+    {
+      type: 'joke',
+      text: `Die Familie Schmukler stellt seit Generationen Nägel her. Papa sagt zu seinem Sohn: "Fima, ich war 30 Jahre nicht im Urlaub. Du bleibst als Geschäftsführer hier, ich fahr mit Mama einen Monat weg." – "Papa, ich bin doch Marketing-Mensch, kein Produktioner!" – "Unsere Lager sind voll, verkauf einfach die Nägel."
+
+  Zwei Wochen später ein Telegramm: "Papa, komm sofort zurück, die Nägel sind alle!" – "Wie das?" – "Ich hab Werbung gemacht." – Auf dem Plakat: Jesus am Kreuz und der Slogan: "Schmukler-Nägel halten seit 2000 Jahren." – Papa: "Fima! Kein Jesus in der Werbung! Sofort runter!"
+
+  Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg sofort her, die Nägel sind schon wieder alle." – "Schon wieder Werbung?!" – "Ja, aber ohne Jesus, versprochen." – Auf dem Plakat: ein leeres Kreuz, ohne Jesus, mit dem Slogan: "Hätten sie nur Schmukler-Nägel gehabt…"`
+    }, 
+    {type:'fact', text:'Es gibt auf der Erde mehr Sterne am Himmel als Sandkörner auf allen Stränden – aber im beobachtbaren Universum noch mehr Galaxien als Sterne in der Milchstraße.'},
+    {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
+    {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
+    {type:'fact', text:'Bienen erkennen menschliche Gesichter – sie nutzen ähnliche Mustererkennung wie wir.'},
+    {type:'fact', text:'Im Inneren eines Blitzes ist es fünfmal heißer als an der Oberfläche der Sonne.'},
+    {type:'fact', text:'Ein Teelöffel Erde enthält mehr Mikroorganismen als es Menschen auf der Erde gibt.'},
+    {type:'fact', text:'Manche Tiefseefische nutzen Biolumineszenz als Tarnung – sie leuchten ihr Bauchprofil, um von unten unsichtbar zu werden.'},
+    {type:'fact', text:'Saturn hat eine geringere Dichte als Wasser – in einem ausreichend großen Becken würde er theoretisch schwimmen.'},
+    {type:'fact', text:'In Island gibt es keine heimischen Moskitos – die schnellen Temperaturwechsel stören ihren Lebenszyklus.'},
+    {type:'fact', text:'Die ISS umkreist die Erde in ~90 Minuten – Astronauten sehen etwa 16 Sonnenauf- und -untergänge pro Tag.'},
+
+    {type:'link', text:'https://thisissand.com/', label:'🏖️ This is Sand', desc:'Male digitale Sandbilder – meditativ und entspannend.'},
+    {type:'link', text:'https://weirdorconfusing.com/', label:'🛒 Weird or Confusing', desc:'Völlig absurde Produkte aus dem Internet.'},
+    {type:'link', text:'https://stars.chromeexperiments.com/', label:'🌌 100.000 Stars', desc:'Ein interaktiver Flug durch unsere Galaxie.'},
+    {type:'link', text:'https://neal.fun/size-of-space/', label:'🚀 Size of Space', desc:'Vergleiche interaktiv Größen – vom Menschen bis zur Galaxie.'},
+    {type:'link', text:'https://radio.garden/', label:'🌍 Radio Garden', desc:'Höre Live-Radio aus jedem Winkel der Erde – per Globus.'},
+    {type:'link', text:'https://pointerpointer.com/', label:'👆 Pointer Pointer', desc:'Jemand zeigt immer genau auf deine Maus.'},
+    {type:'link', text:'https://patatap.com/', label:'🎵 Patatap', desc:'Erstelle Musik mit der Tastatur – jede Taste hat einen Sound.'},
+
+    {type:'joke', text:'Warum war der Mathebuchautor unglücklich? Weil er zu viele Probleme hatte.'},
+    {type:'joke', text:'Treffen sich zwei Schneeflocken – sagt die eine: „Ich hab das Gefühl, wir treiben hier auseinander.“'},
+    {type:'joke', text:'Was macht ein Pirat am Computer? – Er drückt die Enter-Taste.'},
+    {type:'joke', text:'Warum können Geister so schlecht lügen? – Weil man direkt durch sie hindurchsieht.'},
+    {type:'joke', text:'Ein Photon checkt ins Hotel ein. Der Portier fragt: „Haben Sie Gepäck?“ – „Nein, ich reise licht.“'},
+    {type:'joke', text:'Wie nennt man einen Bumerang, der nicht zurückkommt? – Einen Stock.'},
+    {type:'joke', text:'Warum war der Astronaut schlecht im Smalltalk? – Ihm fehlte einfach die Atmosphäre.'},
+    {type:'joke', text:'Was ist das Lieblingsgetränk von Programmierern? – Java.'},
+    {type:'joke', text:'Warum können Orangen nicht rennen? – Weil sie ausgepresst sind.'},
+    {type:'joke', text:'Was macht ein Keks unter einem Baum? – Krümel!'},
+
+    {type:'link',  text:'https://longdogechallenge.com/', label:'🐕 Long Doge Challenge', desc:'Scrolle endlos und finde heraus, wie lang dein Doge wird.'},
+    {type:'link',  text:'https://mondrianandme.com/',        label:'🎨 Mondrian & Me',        desc:'Male interaktiv im Mondrian-Stil.'},
+    {type:'link',  text:'https://zoomquilt.org/',            label:'🌀 ZoomQuilt',             desc:'Ein hypnotisches, endloses Zoom-Gemälde.'}
+  ];
+
+
+  /* ===== Countdown Overlay ===== */
+  function getCountdownTarget(){
+    if (urlParams.has('cd')) { // ?cd=SEKUNDEN
+      const sec = Math.max(1, parseInt(urlParams.get('cd'), 10) || 0);
+      return new Date(Date.now() + sec * 1000);
     }
     return new Date(CONFIG.year, CONFIG.startMonth - 1, 1, 0, 0, 0);
   }
+
   function startCountdownOverlay(){
     const overlay = document.getElementById('countdownOverlay');
     const cdTimer  = document.getElementById('cdTimer');
     const cdText   = document.getElementById('cdText');
     if(!overlay || !cdTimer || !cdText) return;
+    
     const target = getCountdownTarget();
+    
     function fmt2(n){ return String(n).padStart(2,'0') }
     function parts(ms){
       const s = Math.max(0, Math.floor(ms/1000));
@@ -256,7 +300,7 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
       return { d,h,m,c };
     }
     function render(){
-      const now = new Date();
+      const now = getCurrentDate(); // Use sim date
       if (now >= target){
         overlay.style.display = 'none';
         overlay.setAttribute('aria-hidden','true');
@@ -264,7 +308,7 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
       }
       const { d,h,m,c } = parts(target - now);
       cdTimer.textContent = `${d} Tage; ${fmt2(h)}:${fmt2(m)}:${fmt2(c)}`;
-      cdText.innerHTML = `In <strong>${d} ${d===1?'Tag':'Tagen'}</strong> geht’s hier los in deinem persönlichen Adventskalender; mit witzigen Sprüchen; Facts und mehr sowie der Chance auf leckere <strong>Süßigkeiten</strong> und einer kostenlosen <strong>Freitagsmahlzeit</strong>.`;
+      cdText.innerHTML = `In <strong>${d} ${d===1?'Tag':'Tagen'}</strong> geht’s hier los in deinem persönlichen Adventskalender!`;
       overlay.style.display = 'flex';
       overlay.setAttribute('aria-hidden','false');
     }
@@ -275,7 +319,7 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
   startCountdownOverlay();
   window.addEventListener('focus', startCountdownOverlay);
 
-  /* ===== Partikel Canvas; performant ===== */
+  /* ===== Partikel Canvas (Schnee) ===== */
   const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
     const DPR=Math.min(window.devicePixelRatio||1,1.5); const MAX=200; let w=0,h=0,flakes=[],run=true,last=0;
     function resize(){ const r=cvs.getBoundingClientRect(); w=(r.width*DPR)|0; h=(r.height*DPR)|0; cvs.width=w; cvs.height=h; const n=Math.min(MAX,(w*h/45000)|0); flakes=new Array(n).fill(0).map(()=>({x:Math.random()*w,y:Math.random()*h,r:1+Math.random()*2.5*DPR,vx:(-0.12+Math.random()*0.24)*DPR,vy:(0.2+Math.random()*0.6)*DPR,a:0.3+Math.random()*0.6,tw:Math.random()*6.28})) }
@@ -289,6 +333,41 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
     resize(); requestAnimationFrame(step); return { stop(){run=false}, start(){run=true; requestAnimationFrame(step)} };
   })();
 
+  /* ===== Konfetti Canvas ===== */
+  const CONFETTI = (()=>{
+    const cvs = document.getElementById('confetti');
+    const ctx = cvs.getContext('2d');
+    let particles = [];
+    let w=0, h=0;
+    function resize(){ w=cvs.width=window.innerWidth; h=cvs.height=window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    
+    function create(x,y){
+      for(let i=0; i<60; i++){
+        particles.push({
+          x:x, y:y,
+          vx:(Math.random()-0.5)*15, vy:(Math.random()-1)*15,
+          c: `hsl(${Math.random()*360}, 100%, 50%)`,
+          s: Math.random()*6+4,
+          g: 0.4, // gravity
+          l: 100 // life
+        });
+      }
+      if(particles.length > 0 && !running) loop();
+    }
+    let running = false;
+    function loop(){
+      ctx.clearRect(0,0,w,h);
+      particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.l--; });
+      particles = particles.filter(p => p.l > 0);
+      particles.forEach(p => { ctx.fillStyle=p.c; ctx.fillRect(p.x, p.y, p.s, p.s); });
+      if(particles.length > 0) requestAnimationFrame(loop);
+      else running = false;
+    }
+    return { burst: (x,y) => { create(x,y); if(!running){ running=true; loop(); } } }
+  })();
+
+
   /* ===== UI Refs ===== */
   const whoEl=document.getElementById('who'); const userBox=document.getElementById('userBox');
   const btnSignout=document.getElementById('btn-signout'); const btnHow=document.getElementById('btn-how');
@@ -299,11 +378,11 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
   const admCode=document.getElementById('admCode'); const admMsg=document.getElementById('admMsg'); const btnVerify=document.getElementById('btnVerify'); const btnRedeem=document.getElementById('btnRedeem');
   const demoAdminHint=document.getElementById('demoAdminHint');
 
-  /* ===== Single source of truth: state ===== */
+  /* ===== State ===== */
   let state = { opened:{}, rewards:{} };
   let unsubUser=null, unsubBoard=null, lastOpenedJSON='';
 
-  /* ===== Dienst-Abstraktion (DEMO vs LIVE) ===== */
+  /* ===== Service Init ===== */
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
 
   /* ===== Auth UI ===== */
@@ -342,8 +421,9 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
         unsubBoard = await svc.onAllUsers(qs=> renderBoard(qs));
       } else { boardPanel.style.display='none'; if(adminTools) adminTools.style.display='none' }
 
-      const now=new Date(); const isStart=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
-      if(!isStart) _toast('Hinweis: Türen sind bis zum Startmonat gesperrt');
+      const now = getCurrentDate(); 
+      const isStart=(now.getMonth()+1)===CONFIG.startMonth && now.getFullYear()>=CONFIG.year;
+      if(!isStart && !simDateParam) _toast('Hinweis: Türen sind bis zum Startmonat gesperrt');
       startCountdownOverlay();
       if(IS_DEMO){ showDemoAdminToggle(user) }
     } else {
@@ -354,33 +434,61 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
   });
 
   /* ===== Render Grid ===== */
-  function today(){ const d=new Date(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()} }
+  function today(){ const d=getCurrentDate(); return {y:d.getFullYear(), m:d.getMonth()+1, day:d.getDate()} }
+  
   function renderGrid(user){
     const snapJSON = JSON.stringify(state.opened);
-    if(snapJSON===lastOpenedJSON) return; lastOpenedJSON=snapJSON;
+    if(snapJSON===lastOpenedJSON && !document.getElementById('grid').innerHTML === '') return; 
+    lastOpenedJSON=snapJSON;
+    
     grid.innerHTML='';
     const {y,m,day}=today(); const order=getDoorOrder(CONFIG.year);
+    
     for(let i=0;i<CONFIG.days;i++){
       const n=order[i]; const btn=document.createElement('button');
       btn.className='door';
       btn.innerHTML=`<div class="emoji">${n%6===0?'🎁':n%5===0?'⭐':n%4===0?'🕯️':n%3===0?'❄️':n%2===0?'🍪':'🎄'}</div><span class="num">${n}</span>`;
+      
       const isStart=m===CONFIG.startMonth && y>=CONFIG.year;
-      const lock=TEST_UNLOCK_ALL?false:(!isStart?true:n>day);
+      const lock = (!isStart ? true : n > day);
+      
       if(lock) btn.classList.add('locked');
+      
       const opened=!!state.opened[n];
       if(opened){
         btn.classList.add('opened');
         if(DOOR_IMAGES){ const img=document.createElement('img'); img.className='thumb'; img.alt=`Türchen ${n}`; img.src=doorImagePath(n); btn.appendChild(img) }
       }
+      
       const badge=document.createElement('div'); badge.className='badge'; badge.textContent=opened?'geöffnet':'geschlossen'; btn.appendChild(badge);
-      btn.onclick=()=>{ if(lock){ _toast('Dieses Türchen ist noch gesperrt'); return } playSFX('click'); openDoor(user,n) };
+      
+      btn.onclick=(e)=>{ 
+        if(lock){ 
+          playSFX('click'); 
+          shakeDoor(btn); // Visuelles Feedback
+          _toast('Geduld! Dieses Türchen ist noch gesperrt.'); 
+          return; 
+        } 
+        // Konfetti Position
+        const rect = btn.getBoundingClientRect();
+        openDoor(user,n, rect.left + rect.width/2, rect.top + rect.height/2); 
+      };
       grid.appendChild(btn);
     }
   }
 
+  function shakeDoor(el){
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'), 500);
+  }
+
   /* ===== Tür öffnen ===== */
-  async function openDoor(user, dayIndex){
+  async function openDoor(user, dayIndex, cx, cy){
     if(state.opened[dayIndex]){ showReward(dayIndex, state.rewards[dayIndex], user); return }
+    
+    // Konfetti Burst beim ersten Öffnen
+    CONFETTI.burst(cx || window.innerWidth/2, cy || window.innerHeight/2);
+
     const seed = hash(`${user.uid}|${CONFIG.year}|${dayIndex}`); const rng=mul32(seed); const roll=rng();
     let reward;
     if(roll < CONFIG.probabilities.mealVoucher || roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher){
@@ -463,7 +571,6 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
     try{ const res = await svc.redeemVoucher(code); if(res.ok){ admMsg.textContent='Erfolgreich eingelöst' } }catch(e){ admMsg.textContent=e.message||String(e) }
   };
 
-  /* ===== Demo Admin Toggle ===== */
   function showDemoAdminToggle(user){
     if(!IS_DEMO) return;
     demoAdminHint.style.display='';
@@ -481,33 +588,39 @@ Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg s
   };
   window._toast = function(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1600) };
 
-  function openModal(){ const b=document.getElementById('backdrop'); b.style.display='flex'; b.setAttribute('aria-hidden','false') }
-  document.getElementById('closeModal').onclick=()=>{ const b=document.getElementById('backdrop'); b.style.display='none'; b.setAttribute('aria-hidden','true') };
+  function openModal(){ 
+    const b=document.getElementById('backdrop'); 
+    const m=document.getElementById('modalBox');
+    b.style.display='flex'; b.setAttribute('aria-hidden','false');
+    setTimeout(()=>m.classList.add('active'), 10);
+  }
+  document.getElementById('closeModal').onclick=()=>{ 
+    const b=document.getElementById('backdrop'); 
+    const m=document.getElementById('modalBox');
+    m.classList.remove('active');
+    setTimeout(()=>{ b.style.display='none'; b.setAttribute('aria-hidden','true') }, 200);
+  };
 
   function randHex(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('') }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0 } return h>>>0 }
 
-  // Erzeuge pro Nutzer+Jahr eine deterministische, zufällige Reihenfolge der MESSAGES
-function shuffledMessagesFor(user){
-  const seed = hash(`${user.uid}|${CONFIG.year}|MSGPOOL`);
-  const rng = mul32(seed);
-  const arr = MESSAGES.slice(); // Kopie
-  // Fisher-Yates mit Seed
-  for(let i = arr.length - 1; i > 0; i--){
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  function shuffledMessagesFor(user){
+    const seed = hash(`${user.uid}|${CONFIG.year}|MSGPOOL`);
+    const rng = mul32(seed);
+    const arr = MESSAGES.slice(); 
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
-  return arr;
-}
 
-// Liefert die (quasi-)einmalige Nachricht für den Tag
-function getMessageFor(user, dayIndex){
-  const pool = shuffledMessagesFor(user);
-  // dayIndex beginnt bei deinen Türen bei 1..24 – Index 0-basiert:
-  const idx = (dayIndex - 1) % pool.length;
-  return pool[idx];
-}
+  function getMessageFor(user, dayIndex){
+    const pool = shuffledMessagesFor(user);
+    const idx = (dayIndex - 1) % pool.length;
+    return pool[idx];
+  }
 
   function esc(s){ return String(s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
   function signatureFor(uid){ const id = Math.abs((uid.split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0)))%10000; return `SIG-${id.toString().padStart(4,'0')}` }
@@ -518,7 +631,9 @@ function getMessageFor(user, dayIndex){
   btnHow.onclick=()=>{ const body=`<div class="muted">Hinweise</div><ul>
     <li>DEMO-Modus speichert lokal; LIVE nutzt Firebase</li>
     <li>${(CONFIG.probabilities.mealVoucher*100).toFixed(2)} % Essen; ${(CONFIG.probabilities.snackVoucher*100).toFixed(2)} % Snack</li>
-    <li>Admin kann Codes prüfen & einlösen</li></ul>`;
+    <li>Admin kann Codes prüfen & einlösen</li>
+    <li><strong>Debugging:</strong> Hänge <code>?sim_date=2025-12-10</code> an die URL, um ein Datum zu simulieren.</li>
+    </ul>`;
     document.getElementById('modalBody').innerHTML=body; document.getElementById('modalTitle').textContent='Info'; openModal();
   };
 
@@ -571,106 +686,99 @@ function getMessageFor(user, dayIndex){
     };
   }
 
-/* ===== LIVE Service (Firebase) – mit Fallback bei CORS/Fehlern ===== */
-async function makeLiveService(){
-  const firebaseConfig = {
-    apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
-    authDomain: "geburt-ded5c.firebaseapp.com",
-    projectId: "geburt-ded5c",
-    storageBucket: "geburt-ded5c.firebasestorage.app",
-    messagingSenderId: "528584992005",
-    appId: "1:528584992005:web:14dea3f914a432e317c36c",
-    measurementId: "G-SX8G2KPVL8"
-  };
+  /* ===== LIVE Service (Firebase) ===== */
+  async function makeLiveService(){
+    const firebaseConfig = {
+      apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+      authDomain: "geburt-ded5c.firebaseapp.com",
+      projectId: "geburt-ded5c",
+      storageBucket: "geburt-ded5c.firebasestorage.app",
+      messagingSenderId: "528584992005",
+      appId: "1:528584992005:web:14dea3f914a432e317c36c",
+      measurementId: "G-SX8G2KPVL8"
+    };
 
-  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
-  const authMod = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
-  const fsMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-  const fnMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js');
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js');
+    const authMod = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+    const fsMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+    const fnMod   = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-functions.js');
 
-  const app = initializeApp(firebaseConfig);
-  const AUTH = authMod.getAuth(app);
-  const DB   = fsMod.getFirestore(app);
-  const FUN  = fnMod.getFunctions(app, 'europe-west1');
+    const app = initializeApp(firebaseConfig);
+    const AUTH = authMod.getAuth(app);
+    const DB   = fsMod.getFirestore(app);
+    const FUN  = fnMod.getFunctions(app, 'europe-west1');
 
-  try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
+    try{ await authMod.setPersistence(AUTH, authMod.browserLocalPersistence) }catch(e){}
 
-  // Callable-Handles
-  const signCallable   = fnMod.httpsCallable(FUN, 'signVoucher');
-  const verifyCallable = fnMod.httpsCallable(FUN, 'verifyVoucher');
-  const redeemCallable = fnMod.httpsCallable(FUN, 'redeemVoucher');
+    const signCallable    = fnMod.httpsCallable(FUN, 'signVoucher');
+    const verifyCallable = fnMod.httpsCallable(FUN, 'verifyVoucher');
+    const redeemCallable = fnMod.httpsCallable(FUN, 'redeemVoucher');
 
-  // --- Lokaler Fallback: DEMO-Signatur (nur falls Server nicht erreichbar/CORS) ---
-  const FALLBACK_SECRET = 'LOCAL_FALLBACK_ONLY_FOR_TESTS';
-  async function localHmac(payload){
-    const enc=new TextEncoder();
-    const key=await crypto.subtle.importKey('raw', enc.encode(FALLBACK_SECRET), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
-    const sig=await crypto.subtle.sign('HMAC', key, enc.encode(payload));
-    const b= btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=+/g,'').replace(/\+/g,'A').replace(/\//g,'B');
-    return b.slice(0,12);
-  }
-  function isCorsOrInternal(err){
-    // network TypeError, preflight/CORS oder Firebase internal -> true
-    const msg = (err && (err.message||err.code||String(err))) || '';
-    return msg.includes('internal') || msg.includes('CORS') || msg.includes('Failed to fetch') || msg.includes('net::ERR');
-  }
-
-  return {
-    // --- Auth / Firestore wie gehabt ---
-    async register(name,email,pw){
-      const cred = await authMod.createUserWithEmailAndPassword(AUTH, email, pw);
-      await authMod.updateProfile(cred.user, { displayName:name });
-      const uref = fsMod.doc(DB, 'adv_users', cred.user.uid);
-      await fsMod.setDoc(uref, { name, opened:{}, rewards:{}, lastUpdated:new Date().toISOString() });
-      return true;
-    },
-    async login(email,pw){ await authMod.signInWithEmailAndPassword(AUTH, email, pw); return true },
-    async logout(){ await authMod.signOut(AUTH) },
-    onAuth(cb){ return authMod.onAuthStateChanged(AUTH, u=> cb(u?{ uid:u.uid, email:u.email, name:u.displayName }:null)) },
-    async onUserDoc(uid, cb){ const ref=fsMod.doc(DB,'adv_users',uid); return fsMod.onSnapshot(ref, s=> cb(s.data()||{opened:{},rewards:{}})) },
-    async setUserDoc(uid, data){ const ref=fsMod.doc(DB,'adv_users',uid); await fsMod.updateDoc(ref, data) },
-    async onAllUsers(cb){ const q=fsMod.query(fsMod.collection(DB,'adv_users')); return fsMod.onSnapshot(q, qs=> cb(qs.docs.map(d=> ({ uid:d.id, ...(d.data()||{}) })))) },
-    async isAdmin(uid){ const s=await fsMod.getDoc(fsMod.doc(DB,'adv_admins',uid)); return s.exists() },
-    addAdmin(){},
-
-    // --- Voucher: versuche Cloud Function; fallback bei CORS/Fehlern ---
-    async signVoucher({ day, type, nonce }){
-      try{
-        const res = await signCallable({ day, type, nonce });
-        return res.data; // { code, token }
-      }catch(e){
-        if(!isCorsOrInternal(e)) throw e;
-        // Fallback – lokaler Testcode (sichtbar als TEST)
-        const user = AUTH.currentUser;
-        if(!user) throw new Error('Login erforderlich');
-        const payload = `${user.uid}|${CONFIG.year}|${day}|${type}|${nonce}`;
-        const token = await localHmac(payload);
-        const code  = `${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${token}-TEST`;
-        console.warn('[Voucher] Cloud Function nicht erreichbar – lokaler TEST-Code erzeugt:', code);
-        return { code, token, _fallback:true };
-      }
-    },
-    async verifyVoucher(code){
-      try{
-        const res = await verifyCallable({ code });
-        return res.data;
-      }catch(e){
-        if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). TEST-Codes können lokal nicht serverseitig geprüft werden.' };
-        throw e;
-      }
-    },
-    async redeemVoucher(code){
-      try{
-        const res = await redeemCallable({ code });
-        return res.data;
-      }catch(e){
-        if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). Einlösen im TEST-Modus nicht möglich.' };
-        throw e;
-      }
+    const FALLBACK_SECRET = 'LOCAL_FALLBACK_ONLY_FOR_TESTS';
+    async function localHmac(payload){
+      const enc=new TextEncoder();
+      const key=await crypto.subtle.importKey('raw', enc.encode(FALLBACK_SECRET), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+      const sig=await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+      const b= btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=+/g,'').replace(/\+/g,'A').replace(/\//g,'B');
+      return b.slice(0,12);
     }
-  };
-}
+    function isCorsOrInternal(err){
+      const msg = (err && (err.message||err.code||String(err))) || '';
+      return msg.includes('internal') || msg.includes('CORS') || msg.includes('Failed to fetch') || msg.includes('net::ERR');
+    }
 
+    return {
+      async register(name,email,pw){
+        const cred = await authMod.createUserWithEmailAndPassword(AUTH, email, pw);
+        await authMod.updateProfile(cred.user, { displayName:name });
+        const uref = fsMod.doc(DB, 'adv_users', cred.user.uid);
+        await fsMod.setDoc(uref, { name, opened:{}, rewards:{}, lastUpdated:new Date().toISOString() });
+        return true;
+      },
+      async login(email,pw){ await authMod.signInWithEmailAndPassword(AUTH, email, pw); return true },
+      async logout(){ await authMod.signOut(AUTH) },
+      onAuth(cb){ return authMod.onAuthStateChanged(AUTH, u=> cb(u?{ uid:u.uid, email:u.email, name:u.displayName }:null)) },
+      async onUserDoc(uid, cb){ const ref=fsMod.doc(DB,'adv_users',uid); return fsMod.onSnapshot(ref, s=> cb(s.data()||{opened:{},rewards:{}})) },
+      async setUserDoc(uid, data){ const ref=fsMod.doc(DB,'adv_users',uid); await fsMod.updateDoc(ref, data) },
+      async onAllUsers(cb){ const q=fsMod.query(fsMod.collection(DB,'adv_users')); return fsMod.onSnapshot(q, qs=> cb(qs.docs.map(d=> ({ uid:d.id, ...(d.data()||{}) })))) },
+      async isAdmin(uid){ const s=await fsMod.getDoc(fsMod.doc(DB,'adv_admins',uid)); return s.exists() },
+      addAdmin(){},
+
+      async signVoucher({ day, type, nonce }){
+        try{
+          const res = await signCallable({ day, type, nonce });
+          return res.data; 
+        }catch(e){
+          if(!isCorsOrInternal(e)) throw e;
+          const user = AUTH.currentUser;
+          if(!user) throw new Error('Login erforderlich');
+          const payload = `${user.uid}|${CONFIG.year}|${day}|${type}|${nonce}`;
+          const token = await localHmac(payload);
+          const code  = `${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${token}-TEST`;
+          console.warn('[Voucher] Cloud Function nicht erreichbar – lokaler TEST-Code erzeugt:', code);
+          return { code, token, _fallback:true };
+        }
+      },
+      async verifyVoucher(code){
+        try{
+          const res = await verifyCallable({ code });
+          return res.data;
+        }catch(e){
+          if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). TEST-Codes können lokal nicht serverseitig geprüft werden.' };
+          throw e;
+        }
+      },
+      async redeemVoucher(code){
+        try{
+          const res = await redeemCallable({ code });
+          return res.data;
+        }catch(e){
+          if(isCorsOrInternal(e)) return { ok:false, reason:'unavailable', note:'Server nicht erreichbar (CORS). Einlösen im TEST-Modus nicht möglich.' };
+          throw e;
+        }
+      }
+    };
+  }
   </script>
 </body>
 </html>
