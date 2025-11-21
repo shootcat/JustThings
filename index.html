@@ -37,8 +37,21 @@
   label{display:block; margin:8px 0 6px 2px; color:var(--gold); font-weight:600}
   .hint{color:var(--muted); font-size:13px}
   
-  /* Optimiertes Grid: Nutzt auto-fill für bessere Responsivität ohne viele Media Queries */
-  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:14px}
+  /* Grid Layout: Optimiert für 24 Türchen (keine Lücken am Ende) */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Handy: 2 Spalten */
+    gap: 14px;
+  }
+  @media (min-width: 500px) {
+    .grid { grid-template-columns: repeat(3, 1fr); } /* Klein: 3 Spalten */
+  }
+  @media (min-width: 768px) {
+    .grid { grid-template-columns: repeat(4, 1fr); } /* Tablet: 4 Spalten */
+  }
+  @media (min-width: 1100px) {
+    .grid { grid-template-columns: repeat(6, 1fr); } /* Desktop: Exakt 6 Spalten (6x4=24) */
+  }
   
   .door{position:relative; height:110px; border-radius:16px; overflow:hidden; cursor:pointer; border:2px solid transparent; background:
     linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
