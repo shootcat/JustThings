@@ -48,7 +48,7 @@
   .progress-track { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative; }
   .progress-fill { height: 100%; background: linear-gradient(90deg, #5de07a, #35e07a); width: 0%; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 0 10px rgba(93, 224, 122, 0.5); }
 
-  /* --- Grid Layout (Klassisch & Sauber) --- */
+  /* --- Grid Layout --- */
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
   @media (min-width: 500px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   @media (min-width: 768px) { .grid { grid-template-columns: repeat(4, 1fr); } }
@@ -67,13 +67,11 @@
   .door:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
   .door:active { transform: scale(0.98); }
   
-  /* Gesperrt */
   .door.locked{opacity:.6; cursor:not-allowed; border-color:rgba(255,255,255,.04); background: rgba(255,255,255,0.03);}
   
-  /* Geöffnet */
   .door.opened{
     border-color:rgba(93,216,255,.4); 
-    background: rgba(0,0,0,0.3); /* Etwas dunkler, damit man sieht "erledigt" */
+    background: rgba(0,0,0,0.3); 
     box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
   }
   
@@ -81,23 +79,15 @@
   .door .emoji{position:absolute; left:10px; top:8px; font-size: 18px; opacity: 0.8} 
   .door .num{position:relative; z-index:2; font-size: 32px;}
   
-  /* Bild Thumbnail auf geöffneter Tür (jetzt hell und klar) */
   .door.opened img.thumb{
     position:absolute; inset:0; width:100%; height:100%; object-fit:cover; 
-    filter: none; /* Keine Abdunklung mehr */
-    z-index: 0; opacity: 1; /* Volle Sichtbarkeit */
+    filter: none; 
+    z-index: 0; opacity: 1;
     transition: transform 0.3s;
   }
-  /* Leichter Zoom-Effekt beim Hovern über offene Tür */
   .door.opened:hover img.thumb { transform: scale(1.05); }
+  .door.opened .num { opacity: 0.7; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 
-  /* Nummer tritt in den Hintergrund, damit das Bild wirkt, aber bleibt lesbar durch Schatten */
-  .door.opened .num { 
-    opacity: 0.7; 
-    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-  }
-
-  /* Tag 24 Special */
   .door.day-24 {
     border: 1px solid rgba(255, 215, 106, 0.6);
     background: linear-gradient(135deg, rgba(255, 215, 106, 0.15), rgba(255, 215, 106, 0.02));
@@ -128,7 +118,6 @@
   .toast{position:fixed; bottom:24px; right:24px; background:rgba(25,32,48,.95); color:#fff; border:1px solid var(--border); padding:14px 18px; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.4); opacity:0; transform:translateY(10px); transition:.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 100; display: flex; align-items: center; gap: 10px;}
   .toast.show{opacity:1; transform:translateY(0)}
   
-  /* Santa Animation */
   #santa{ position:fixed; top:15%; left:-200px; font-size:60px; pointer-events:none; z-index:5; filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5)); opacity: 0.9; transition: transform 0.2s; }
   @keyframes flySanta {
     0% { left: -200px; transform: translateY(0) rotate(5deg); }
@@ -138,7 +127,6 @@
     100% { left: 110vw; transform: translateY(0) rotate(5deg); }
   }
 
-  /* Countdown */
   #countdownOverlay{
     position:fixed; inset:0; display:none; z-index:40;
     background:rgba(5,8,12,.7); backdrop-filter: blur(8px);
@@ -161,10 +149,7 @@
       <div class="logo" id="appLogo" aria-hidden="true"></div>
       <h1>GAB Adventskalender</h1>
       <div class="spacer"></div>
-      
-      <!-- New: Mute Button -->
       <button class="btn btn-icon-only" id="btn-mute" title="Sound an/aus" style="margin-right:8px">🔊</button>
-      
       <div id="userBox" class="muted" style="font-size:14px; margin-right:10px"></div>
       <button class="btn" id="btn-signout" style="display:none">Abmelden</button>
       <button class="btn" id="btn-how">Info</button>
@@ -172,7 +157,6 @@
   </header>
 
   <div class="wrap">
-    <!-- Auth -->
     <div class="panel auth" id="authPanel">
       <h2 style="margin:4px 0 14px 0">Anmelden oder registrieren</h2>
       <div class="hint">Im DEMO-Modus bleiben Daten lokal.</div>
@@ -193,7 +177,6 @@
       <div id="authMsg" class="hint" style="margin-top:10px; color:#ff6b6b"></div>
     </div>
 
-    <!-- Kalender -->
     <div class="panel" id="kalPanel" style="display:none">
       <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:14px">
         <div>
@@ -202,22 +185,13 @@
         </div>
         <div id="devWarning" style="display:none; font-size:12px; color:var(--gold); border:1px solid var(--gold); padding:4px 8px; border-radius:6px">⚠️ Sim-Mode</div>
       </div>
-
-      <!-- Progress Bar -->
       <div class="progress-container">
-        <div class="progress-labels">
-          <span>Fortschritt</span>
-          <span id="progressText">0 / 24</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
+        <div class="progress-labels"><span>Fortschritt</span><span id="progressText">0 / 24</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       </div>
-
       <div class="grid" id="grid"></div>
     </div>
 
-    <!-- Admin Übersicht -->
     <div class="panel" id="boardPanel" style="display:none; margin-top:16px">
       <h3>Übersicht Team</h3>
       <div id="board"></div>
@@ -235,7 +209,6 @@
 
   <div class="footer">© 2025 GAB Neumann GmbH | Interner Spaßkalender</div>
 
-  <!-- Modal -->
   <div class="modal-backdrop" id="backdrop">
     <div class="modal" id="modalBox">
       <div class="head"><strong id="modalTitle">Türchen</strong><div class="spacer"></div><button class="btn" id="closeModal">✕</button></div>
@@ -243,7 +216,6 @@
     </div>
   </div>
 
-  <!-- Countdown -->
   <div id="countdownOverlay" aria-hidden="true">
     <div class="box">
       <div class="timer" id="cdTimer">--:--:--</div>
@@ -255,7 +227,6 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-  /* ===== Config ===== */
   const IS_DEMO = location.protocol === 'file:';
   const DOOR_IMAGES = true; 
   const urlParams = new URLSearchParams(window.location.search);
@@ -269,7 +240,6 @@
   };
   document.documentElement.style.setProperty('--bg', `url('${CONFIG.bgImage}')`);
 
-  /* ===== Global Audio State ===== */
   let isMuted = localStorage.getItem('gab_muted') === 'true';
   const btnMute = document.getElementById('btn-mute');
   function updateMuteUI(){
@@ -277,32 +247,18 @@
     btnMute.style.opacity = isMuted ? '0.5' : '1';
   }
   updateMuteUI();
-  btnMute.onclick = () => {
-    isMuted = !isMuted;
-    localStorage.setItem('gab_muted', isMuted);
-    updateMuteUI();
-  };
-  function playSFX(k){ 
-    if(isMuted) return;
-    const s=CONFIG.sfx[k]; 
-    if(s) new Audio(s[0]).play().catch(()=>{}); 
-  }
+  btnMute.onclick = () => { isMuted = !isMuted; localStorage.setItem('gab_muted', isMuted); updateMuteUI(); };
+  function playSFX(k){ if(isMuted) return; const s=CONFIG.sfx[k]; if(s) new Audio(s[0]).play().catch(()=>{}); }
 
-  /* ===== Santa Animation Logic ===== */
   function triggerSanta(){
     const el = document.getElementById('santa');
-    if(el.style.animationName === 'flySanta') return; // already flying
+    if(el.style.animationName === 'flySanta') return; 
     el.style.animation = 'flySanta 6s linear forwards';
-    // Easter egg chance: play hohoho
     if(Math.random() > 0.5) setTimeout(()=>playSFX('hoho'), 500);
-    setTimeout(() => { el.style.animation = ''; }, 6500); // reset
+    setTimeout(() => { el.style.animation = ''; }, 6500); 
   }
-  // Randomly trigger santa every 45-120 seconds
-  setInterval(() => {
-    if(Math.random() > 0.3) triggerSanta();
-  }, 1000 * (45 + Math.random()*75));
+  setInterval(() => { if(Math.random() > 0.3) triggerSanta(); }, 1000 * (45 + Math.random()*75));
 
-  /* ===== Logic Helpers ===== */
   function getCurrentDate() {
     if (simDateParam) {
       const sim = new Date(simDateParam);
@@ -314,32 +270,59 @@
     }
     return new Date();
   }
-  if(simDateParam) {
-     document.getElementById('devWarning').style.display = 'block';
-  }
+  if(simDateParam) { document.getElementById('devWarning').style.display = 'block'; }
 
-  /* ===== Easter Egg ===== */
-  document.getElementById('appLogo').onclick = () => {
-    playSFX('win'); 
-    triggerSanta();
-    CONFETTI.burst(window.innerWidth/2, window.innerHeight/2);
-    _toast('🎄 Ho Ho Ho! 🎄');
-  };
+  document.getElementById('appLogo').onclick = () => { playSFX('win'); triggerSanta(); CONFETTI.burst(window.innerWidth/2, window.innerHeight/2); _toast('🎄 Ho Ho Ho! 🎄'); };
 
-  /* ===== Messages Pool ===== */
+  /* ===== GROSSER POOL (Original + Premium Extras) ===== */
   const MESSAGES = [
-    {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
-    {type:'joke', text:'Was ist das Lieblingsgetränk von Programmierern? – Java.'},
-    {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut.'},
+    // --- ORIGINAL LISTE (Wieder eingefügt) ---
+    {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
+    {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
+    {type:'fact', text:'Bienen erkennen menschliche Gesichter – sie nutzen ähnliche Mustererkennung wie wir.'},
+    {type:'fact', text:'Im Inneren eines Blitzes ist es fünfmal heißer als an der Oberfläche der Sonne.'},
+    {type:'fact', text:'Ein Teelöffel Erde enthält mehr Mikroorganismen als es Menschen auf der Erde gibt.'},
+    {type:'fact', text:'Manche Tiefseefische nutzen Biolumineszenz als Tarnung – sie leuchten ihr Bauchprofil, um von unten unsichtbar zu werden.'},
+    {type:'fact', text:'Saturn hat eine geringere Dichte als Wasser – in einem ausreichend großen Becken würde er theoretisch schwimmen.'},
+    {type:'fact', text:'In Island gibt es keine heimischen Moskitos – die schnellen Temperaturwechsel stören ihren Lebenszyklus.'},
+    {type:'fact', text:'Die ISS umkreist die Erde in ~90 Minuten – Astronauten sehen etwa 16 Sonnenauf- und -untergänge pro Tag.'},
+
+    {type:'link', text:'https://thisissand.com/', label:'🏖️ This is Sand', desc:'Male digitale Sandbilder – meditativ und entspannend.'},
+    {type:'link', text:'https://weirdorconfusing.com/', label:'🛒 Weird or Confusing', desc:'Völlig absurde Produkte aus dem Internet.'},
+    {type:'link', text:'https://stars.chromeexperiments.com/', label:'🌌 100.000 Stars', desc:'Ein interaktiver Flug durch unsere Galaxie.'},
     {type:'link', text:'https://neal.fun/size-of-space/', label:'🚀 Size of Space', desc:'Vergleiche interaktiv Größen – vom Menschen bis zur Galaxie.'},
-    {type:'fact', text:'In Island gibt es keine heimischen Moskitos.'},
-    {type:'joke', text:'Treffen sich zwei Schneeflocken. Sagt die eine: "Komm, wir gehen rodeln."'},
+    {type:'link', text:'https://radio.garden/', label:'🌍 Radio Garden', desc:'Höre Live-Radio aus jedem Winkel der Erde – per Globus.'},
+    {type:'link', text:'https://pointerpointer.com/', label:'👆 Pointer Pointer', desc:'Jemand zeigt immer genau auf deine Maus.'},
+    {type:'link', text:'https://patatap.com/', label:'🎵 Patatap', desc:'Erstelle Musik mit der Tastatur – jede Taste hat einen Sound.'},
+
+    {type:'joke', text:'Warum war der Mathebuchautor unglücklich? Weil er zu viele Probleme hatte.'},
+    {type:'joke', text:'Treffen sich zwei Schneeflocken – sagt die eine: „Ich hab das Gefühl, wir treiben hier auseinander.“'},
+    {type:'joke', text:'Was macht ein Pirat am Computer? – Er drückt die Enter-Taste.'},
+    {type:'joke', text:'Warum können Geister so schlecht lügen? – Weil man direkt durch sie hindurchsieht.'},
+    {type:'joke', text:'Ein Photon checkt ins Hotel ein. Der Portier fragt: „Haben Sie Gepäck?“ – „Nein, ich reise licht.“'},
+    {type:'joke', text:'Wie nennt man einen Bumerang, der nicht zurückkommt? – Einen Stock.'},
+    {type:'joke', text:'Warum war der Astronaut schlecht im Smalltalk? – Ihm fehlte einfach die Atmosphäre.'},
+    {type:'joke', text:'Was ist das Lieblingsgetränk von Programmierern? – Java.'},
+    {type:'joke', text:'Warum können Orangen nicht rennen? – Weil sie ausgepresst sind.'},
+    {type:'joke', text:'Was macht ein Keks unter einem Baum? – Krümel!'},
+
+    // --- PREMIUM EXTRAS (Damit der Pool für >24 Tage reicht) ---
+    {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
+    {type:'quote', text:'Mach es wie der Weihnachtsmann: Sei einfach mal nicht da.'},
+    {type:'quote', text:'Das schönste am Job ist, dass sich der Stuhl dreht.'},
+    {type:'quote', text:'Denke immer daran: Dein PC war auch mal ein Sandkorn.'},
     {type:'link', text:'https://quickdraw.withgoogle.com/', label:'🎨 Quick Draw', desc:'Kann eine KI deine Kritzeleien erkennen?'},
-    {type:'fact', text:'Schnee ist eigentlich gar nicht weiß, sondern transparent.'},
-    {type:'quote', text:'Mach es wie der Weihnachtsmann: Sei einfach mal nicht da.'}
+    {type:'link', text:'https://zoomquilt.org/', label:'🌀 ZoomQuilt', desc:'Ein hypnotisches, endloses Zoom-Gemälde.'},
+    {type:'link', text:'https://paveldogreat.github.io/WebGL-Fluid-Simulation/', label:'💧 Fluid Sim', desc:'Wirble bunte Flüssigkeiten über den Bildschirm.'},
+    {type:'link', text:'https://littlealchemy2.com/', label:'⚗️ Little Alchemy', desc:'Kombiniere Elemente und erschaffe neue Dinge.'},
+    {
+      type: 'joke',
+      text: `Die Familie Schmukler stellt seit Generationen Nägel her. Papa sagt zu seinem Sohn: "Fima, ich war 30 Jahre nicht im Urlaub. Du bleibst als Geschäftsführer hier, ich fahr mit Mama einen Monat weg." – "Papa, ich bin doch Marketing-Mensch, kein Produktioner!" – "Unsere Lager sind voll, verkauf einfach die Nägel."
+  Zwei Wochen später ein Telegramm: "Papa, komm sofort zurück, die Nägel sind alle!" – "Wie das?" – "Ich hab Werbung gemacht." – Auf dem Plakat: Jesus am Kreuz und der Slogan: "Schmukler-Nägel halten seit 2000 Jahren." – Papa: "Fima! Kein Jesus in der Werbung! Sofort runter!"
+  Papa fährt wieder weg. Zwei Wochen später wieder ein Telegramm: "Papa, flieg sofort her, die Nägel sind schon wieder alle." – "Schon wieder Werbung?!" – "Ja, aber ohne Jesus, versprochen." – Auf dem Plakat: ein leeres Kreuz, ohne Jesus, mit dem Slogan: "Hätten sie nur Schmukler-Nägel gehabt…"`
+    }
   ];
 
-  /* ===== Countdown Logic ===== */
   function getCountdownTarget(){
     if (urlParams.has('cd')) return new Date(Date.now() + parseInt(urlParams.get('cd')) * 1000);
     return new Date(CONFIG.year, CONFIG.startMonth - 1, 1, 0, 0, 0);
@@ -350,28 +333,22 @@
     const cdText = document.getElementById('cdText');
     if(!overlay) return;
     const target = getCountdownTarget();
-    
     function render(){
       const now = getCurrentDate();
-      if (now >= target){
-        overlay.style.display = 'none'; return;
-      }
+      if (now >= target){ overlay.style.display = 'none'; return; }
       const diff = target - now;
       const d = Math.floor(diff/86400000);
       const h = Math.floor((diff%86400000)/3600000);
       const m = Math.floor((diff%3600000)/60000);
       const s = Math.floor((diff%60000)/1000);
-      
       cdTimer.textContent = `${d} Tage ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
       cdText.innerHTML = `Bald geht es los!`;
       overlay.style.display = 'flex';
     }
-    render();
-    setInterval(render, 1000);
+    render(); setInterval(render, 1000);
   }
   startCountdownOverlay();
 
-  /* ===== Visual Effects ===== */
   const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
     let w=0,h=0,flakes=[],run=true;
     function resize(){ w=cvs.width=window.innerWidth; h=cvs.height=window.innerHeight; flakes=new Array(100).fill(0).map(()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*3+1,s:Math.random()*1+0.5})) }
@@ -384,7 +361,6 @@
     window.onresize=resize; resize(); loop();
     return { toggle:()=>{ run=!run; if(run) loop(); } };
   })();
-  // Snow toggle via clicking bg (easter egg-ish) or via API. Let's keep it running by default.
 
   const CONFETTI = (()=>{
     const cvs = document.getElementById('confetti'); const ctx = cvs.getContext('2d');
@@ -401,11 +377,9 @@
     return { burst:(x,y)=>{ for(let i=0;i<40;i++) p.push({x,y,vx:(Math.random()-.5)*20,vy:(Math.random()-1)*20,c:colors[Math.floor(Math.random()*colors.length)],l:100}); loop(); } }
   })();
 
-  /* ===== Core App Logic ===== */
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
   let state = { opened:{}, rewards:{} };
 
-  /* UI Refs */
   const grid = document.getElementById('grid');
   
   svc.onAuth(async user => {
@@ -415,12 +389,10 @@
       document.getElementById('userBox').textContent = user.name;
       document.getElementById('who').textContent = user.name;
       document.getElementById('btn-signout').style.display='block';
-      
       await svc.onUserDoc(user.uid, data => {
         state = data || { opened:{}, rewards:{} };
         renderGrid(user);
       });
-
       if(await svc.isAdmin(user.uid)){
         document.getElementById('boardPanel').style.display='block';
         document.getElementById('adminTools').style.display='block';
@@ -444,20 +416,16 @@
     catch(e){ document.getElementById('authMsg').textContent = e.message; }
   };
 
-  /* ===== Grid Rendering (Classic Style, No 3D) ===== */
   let lastJSON = '';
   function renderGrid(user){
     const json = JSON.stringify(state.opened);
     if(json === lastJSON && grid.hasChildNodes()) return;
     lastJSON = json;
-    
     grid.innerHTML = '';
     const today = getCurrentDate();
     const curDay = today.getDate();
     const curMonth = today.getMonth()+1;
     const order = getDoorOrder(CONFIG.year);
-
-    // Progress Bar update
     const openedCount = Object.keys(state.opened).length;
     const pct = Math.min(100, (openedCount / CONFIG.days) * 100);
     document.getElementById('progressFill').style.width = `${pct}%`;
@@ -467,17 +435,11 @@
       const n = order[i];
       const isOpened = !!state.opened[n];
       const isLocked = (curMonth < CONFIG.startMonth) || (curMonth === CONFIG.startMonth && n > curDay);
-      
-      // Classic Door Element
       const btn = document.createElement('button');
       btn.className = `door ${isOpened ? 'opened' : ''} ${isLocked ? 'locked' : ''} ${n===24 ? 'day-24' : ''}`;
-      
       const em = n===24 ? '🌟' : (n%6===0?'🎁':n%5===0?'🍪':n%4===0?'🕯️':n%3===0?'❄️':'🎄');
       btn.innerHTML = `<div class="emoji">${em}</div><div class="num">${n}</div>`;
-      
-      // Optional: Add Badge if opened
       if(isOpened){
-         // Falls du Bilder auf der Tür willst:
          if(DOOR_IMAGES){
              const img = document.createElement('img');
              img.className = 'thumb';
@@ -488,34 +450,23 @@
          const badge = document.createElement('div'); badge.className='badge'; badge.textContent='offen';
          btn.appendChild(badge);
       }
-
-      // Interaction Logic
       btn.onclick = (e) => {
-        if(isOpened){
-           // Bereits offen: Zeige Inhalt (Sofort)
-           showReward(n, state.rewards[n], user);
-        } else {
+        if(isOpened){ showReward(n, state.rewards[n], user); } else {
            if(isLocked){
              btn.classList.add('shake');
              setTimeout(()=>btn.classList.remove('shake'), 500);
              playSFX('click');
              _toast(`Tag ${n} ist noch nicht dran!`);
            } else {
-             // Öffnen!
              const rect = btn.getBoundingClientRect();
-             // AUTOMATISCH öffnen, kein zweiter Klick
-             openDoor(user, n, rect.left+rect.width/2, rect.top+rect.height/2).then(r => {
-                 // Modal wird von openDoor aufgerufen
-             });
+             openDoor(user, n, rect.left+rect.width/2, rect.top+rect.height/2);
            }
         }
       };
-
       grid.appendChild(btn);
     }
   }
 
-  /* ===== Opening Logic ===== */
   async function openDoor(user, day, x, y){
     CONFETTI.burst(x,y);
     const seed = hash(`${user.uid}|${CONFIG.year}|${day}`);
@@ -523,16 +474,28 @@
     const roll = rng();
     
     let reward;
-    // Zuerst Reward bestimmen
+    
+    // 1. Chance: Mittagessen (0.25%)
     if(roll < CONFIG.probabilities.mealVoucher){
         const nonce = randHex(8);
         try {
           const sig = await svc.signVoucher({day, type:'meal', nonce});
-          reward = { kind:'voucher', payload:{title:'Gratis Mittag', type:'meal', code:sig.code, ...sig} };
+          reward = { kind:'voucher', payload:{title:'Gratis Mittag', type:'meal', desc:'Gutschein für die Kantine (bis 4€)', code:sig.code, ...sig} };
           playSFX('win');
         } catch(e) { return _toast('Fehler beim Laden'); }
+        
+    // 2. Chance: Snack (10%) - HIER EINGEFÜGT
+    } else if (roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher) {
+        const nonce = randHex(8);
+        try {
+          const sig = await svc.signVoucher({day, type:'snack', nonce});
+          reward = { kind:'voucher', payload:{title:'Süßigkeit', type:'snack', desc:'Ein Snack nach Wahl an der Theke', code:sig.code, ...sig} };
+          playSFX('win');
+        } catch(e) { return _toast('Fehler beim Laden'); }
+
+    // 3. Sonst: Nachricht / Spruch
     } else {
-        const msg = getMessageFor(user, day);
+        const msg = getMessageFor(user, day); 
         reward = { kind:'message', payload:msg };
         playSFX('open');
     }
@@ -542,7 +505,7 @@
     const rewards = {...state.rewards, [day]:reward};
     await svc.setUserDoc(user.uid, { opened, rewards });
     
-    // SOFORT Modal anzeigen, damit es nicht "leer" wirkt
+    // SOFORT Modal anzeigen
     showReward(day, reward, user);
   }
 
@@ -550,8 +513,6 @@
     if(!reward) return;
     document.getElementById('modalTitle').textContent = `Inhalt Türchen ${day}`;
     let h = '';
-    
-    // Optional: Großes Bild im Modal anzeigen
     const hero = DOOR_IMAGES ? `<div style="position:relative; height:180px; border-radius:12px; overflow:hidden; margin-bottom:16px; border:1px solid var(--border); box-shadow:0 5px 15px rgba(0,0,0,0.3)"><img src="assets/doors/${String(day).padStart(2,'0')}.jpg" alt="Bild" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover" onerror="this.parentElement.style.display='none'"/></div>` : '';
 
     if(reward.kind === 'voucher'){
@@ -575,7 +536,6 @@
        const m = reward.payload;
        const icon = m.type==='joke'?'🤣':(m.type==='fact'?'💡':'✨');
        const shareText = `${m.type==='joke'?'🤣 Witz':(m.type==='fact'?'💡 Fakt':'✨ Spruch')} des Tages:\n\n${m.text}\n\n(Aus dem GAB Adventskalender)`;
-       
        h = `${hero}<div class="reward">
              <div class="icon">${icon}</div>
              <div style="flex:1">
@@ -589,25 +549,11 @@
     openModal();
   }
 
-  window.copyToClip = (txt, label) => {
-    navigator.clipboard.writeText(txt).then(() => _toast(`${label} kopiert!`));
-  };
+  window.copyToClip = (txt, label) => { navigator.clipboard.writeText(txt).then(() => _toast(`${label} kopiert!`)); };
+  function openModal(){ const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox'); b.style.display='flex'; setTimeout(()=>m.classList.add('active'),10); }
+  document.getElementById('closeModal').onclick = () => { const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox'); m.classList.remove('active'); setTimeout(()=>b.style.display='none',300); };
+  window._toast = (msg) => { const t = document.getElementById('toast'); t.innerHTML = `<span>🔔</span> ${msg}`; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
 
-  /* ===== Modal & Toast ===== */
-  function openModal(){ 
-    const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox');
-    b.style.display='flex'; setTimeout(()=>m.classList.add('active'),10);
-  }
-  document.getElementById('closeModal').onclick = () => {
-    const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox');
-    m.classList.remove('active'); setTimeout(()=>b.style.display='none',300);
-  };
-  window._toast = (msg) => {
-    const t = document.getElementById('toast'); t.innerHTML = `<span>🔔</span> ${msg}`;
-    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500);
-  };
-
-  /* ===== Admin Board ===== */
   function renderBoard(users){
     let h = '<table><thead><tr><th>Name</th><th>Fortschritt</th></tr></thead><tbody>';
     users.forEach(u => {
@@ -618,56 +564,55 @@
     document.getElementById('board').innerHTML = h;
   }
 
-  /* ===== Helpers ===== */
   function getDoorOrder(y){
     const arr=Array.from({length:24},(_,i)=>i+1);
     let s=hash(String(y));
     for(let i=arr.length-1;i>0;i--){ s=(s*9301+49297)%233280; const j=(s%(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
     return arr;
   }
-  function getMessageFor(u,d){
-    return MESSAGES[(d + hash(u.uid)) % MESSAGES.length];
+  
+  /* ===== SHUFFLE LOGIK: Garantiert keine Wiederholung ===== */
+  function shuffledMessagesFor(user){
+    const seed = hash(`${user.uid}|${CONFIG.year}|MSGPOOL`);
+    const rng = mul32(seed);
+    const arr = MESSAGES.slice(); // Kopie erstellen
+    // Fisher-Yates Shuffle seeded
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
+
+  function getMessageFor(user, dayIndex){
+    const pool = shuffledMessagesFor(user);
+    // dayIndex - 1, weil Tag 1 = Index 0. 
+    // Wenn Pool > 24, gibt es KEINE Wiederholung.
+    const idx = (dayIndex - 1) % pool.length;
+    return pool[idx];
+  }
+
   function randHex(n){ return Math.random().toString(16).slice(2, 2+n).toUpperCase(); }
   function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=((h<<5)-h)+s.charCodeAt(i)|0; return h>>>0; }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   
-  /* ===== Demo Service (Mock) ===== */
   async function makeDemoService(){
-    const store = { 
-      get:(k)=>JSON.parse(localStorage.getItem('adv_v2_'+k)||'null'),
-      set:(k,v)=>localStorage.setItem('adv_v2_'+k, JSON.stringify(v))
-    };
+    const store = { get:(k)=>JSON.parse(localStorage.getItem('adv_v2_'+k)||'null'), set:(k,v)=>localStorage.setItem('adv_v2_'+k, JSON.stringify(v)) };
     let cbs = [];
     return {
-      register: async(n,e,p)=>{ 
-        const uid='u'+hash(e); store.set('u_'+uid, {name:n,email:e}); 
-        store.set('sess', {uid,name:n}); cbs.forEach(f=>f({uid,name:n})); return true; 
-      },
-      login: async(e,p)=>{ 
-        const uid='u'+hash(e); if(!store.get('u_'+uid)) throw new Error('User unbekannt');
-        store.set('sess', {uid,name:store.get('u_'+uid).name}); cbs.forEach(f=>f({uid,name:store.get('u_'+uid).name})); return true;
-      },
+      register: async(n,e,p)=>{ const uid='u'+hash(e); store.set('u_'+uid, {name:n,email:e}); store.set('sess', {uid,name:n}); cbs.forEach(f=>f({uid,name:n})); return true; },
+      login: async(e,p)=>{ const uid='u'+hash(e); if(!store.get('u_'+uid)) throw new Error('User unbekannt'); store.set('sess', {uid,name:store.get('u_'+uid).name}); cbs.forEach(f=>f({uid,name:store.get('u_'+uid).name})); return true; },
       logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); },
       onAuth: (fn)=>{ cbs.push(fn); fn(store.get('sess')); },
-      onUserDoc: async(uid, fn)=>{ 
-        const fire=()=>fn(store.get('data_'+uid)); fire(); 
-        setInterval(fire, 1000);
-      },
+      onUserDoc: async(uid, fn)=>{ const fire=()=>fn(store.get('data_'+uid)); fire(); setInterval(fire, 1000); },
       setUserDoc: async(uid, d)=>{ const old=store.get('data_'+uid)||{}; store.set('data_'+uid, {...old, ...d}); },
-      isAdmin: async()=>true, // Everyone is admin in demo
-      onAllUsers: async(fn)=>{ 
-        fn([{name:'Max', opened:{1:true,2:true}}, {name:'Lisa', opened:{1:true}}]);
-      },
+      isAdmin: async()=>true,
+      onAllUsers: async(fn)=>{ fn([{name:'Max', opened:{1:true,2:true}}, {name:'Lisa', opened:{1:true}}]); },
       signVoucher: async({day,type,nonce})=>{ return {code:`DEMO-${type}-${day}-${nonce}`, token:'xxx'}; }
     };
   }
 
-  /* ===== Live Service (Stub) ===== */
-  async function makeLiveService(){
-     return makeDemoService(); // Fallback
-  }
-
+  async function makeLiveService(){ return makeDemoService(); }
   </script>
 </body>
 </html>
