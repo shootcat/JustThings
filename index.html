@@ -12,6 +12,9 @@
     --glass-strong: rgba(255,255,255,.22);
     --border: rgba(255,255,255,.18);
     --text:#fff; --muted:#e3e9f7; --gold:#ffd76a;
+    /* Terminal Colors */
+    --term-green: #5de07a;
+    --term-glow: rgba(93, 224, 122, 0.6);
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:var(--text); background:#0b0f17; display:flex; flex-direction:column; min-height:100vh; overflow-x:hidden}
@@ -127,14 +130,37 @@
     100% { left: 110vw; transform: translateY(0) rotate(5deg); }
   }
 
+  /* Countdown & ASCII Cinema */
   #countdownOverlay{
     position:fixed; inset:0; display:none; z-index:40;
-    background:rgba(5,8,12,.7); backdrop-filter: blur(8px);
-    align-items:center; justify-content:center; text-align:center; padding:24px;
+    background:rgba(5,8,12,.85); backdrop-filter: blur(10px);
+    align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:20px;
   }
-  #countdownOverlay .box{ max-width:820px; margin:auto; color:#fff }
+  #countdownOverlay .box{ max-width:820px; margin:0 auto; color:#fff; width:100%; }
   #countdownOverlay .timer{ font-weight:800; font-size:clamp(32px, 7vw, 64px); letter-spacing:-1px; background: linear-gradient(to bottom, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
   
+  /* ASCII Cinema Styles */
+  #asciiCinema {
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre;
+    font-size: clamp(8px, 1.8vw, 14px); /* Responsive Font Size */
+    line-height: 1.1;
+    color: var(--term-green);
+    text-shadow: 0 0 4px var(--term-glow);
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(93, 224, 122, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 0 auto 20px auto;
+    display: inline-block;
+    box-shadow: 0 0 20px rgba(93, 224, 122, 0.1);
+    width: 100%;
+    max-width: 600px;
+    overflow: hidden;
+    min-height: 220px; /* Damit es nicht springt */
+    text-align: center;
+  }
+
   table{width:100%; border-collapse:collapse} th,td{padding:12px; border-bottom:1px solid var(--border)} th{text-align:left; color:var(--gold)}
 </style>
 </head>
@@ -218,6 +244,8 @@
 
   <div id="countdownOverlay" aria-hidden="true">
     <div class="box">
+      <!-- ASCII Cinema Container -->
+      <pre id="asciiCinema"></pre> 
       <div class="timer" id="cdTimer">--:--:--</div>
       <div class="msg" id="cdText">Warten auf den Start...</div>
     </div>
@@ -274,9 +302,67 @@
 
   document.getElementById('appLogo').onclick = () => { playSFX('win'); triggerSanta(); CONFETTI.burst(window.innerWidth/2, window.innerHeight/2); _toast('🎄 Ho Ho Ho! 🎄'); };
 
-  /* ===== GROSSER POOL (Original + Premium Extras) ===== */
+  /* ===== ASCII CINEMA ENGINE ===== */
+  const ASCII_FRAMES = [
+    `
+          * *
+        /   \\       /   \\
+       /_____\\     /_____\\
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+      * * __o    *
+        /   \\  -\\<, /   \\
+       /_____\\     /_____\\
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+          * __o
+      * /   \\      -\\<,   *
+       /_____\\     /_____\\
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+          * * /   \\   * __o
+       /_____\\      -\\<,
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+          * * /   \\   * /_____\\   🎁   
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+          * * /   \\   * /_____\\    🎁  
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `,
+    `
+      HO     HO     HO
+          * * /   \\   * /_____\\   _🎁_ 
+      [  [ ]  ]   [  [ ]  ]
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    `
+  ];
+  
+  function startAsciiCinema() {
+    const el = document.getElementById('asciiCinema');
+    if(!el) return;
+    let frame = 0;
+    setInterval(() => {
+      el.innerText = ASCII_FRAMES[frame];
+      frame = (frame + 1) % ASCII_FRAMES.length;
+    }, 700); // Speed of animation
+  }
+  startAsciiCinema();
+
+
+  /* ===== GROSSER POOL ===== */
   const MESSAGES = [
-    // --- ORIGINAL LISTE (Wieder eingefügt) ---
     {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
     {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
     {type:'fact', text:'Bienen erkennen menschliche Gesichter – sie nutzen ähnliche Mustererkennung wie wir.'},
@@ -306,7 +392,7 @@
     {type:'joke', text:'Warum können Orangen nicht rennen? – Weil sie ausgepresst sind.'},
     {type:'joke', text:'Was macht ein Keks unter einem Baum? – Krümel!'},
 
-    // --- PREMIUM EXTRAS (Damit der Pool für >24 Tage reicht) ---
+    // PREMIUM EXTRAS
     {type:'quote', text:'Motivation des Tages: Auch diesen Arbeitstag darfst du mit deinen Kollegen hier verbringen!'},
     {type:'quote', text:'Mach es wie der Weihnachtsmann: Sei einfach mal nicht da.'},
     {type:'quote', text:'Das schönste am Job ist, dass sich der Stuhl dreht.'},
@@ -347,7 +433,8 @@
     }
     render(); setInterval(render, 1000);
   }
-  startCountdownOverlay();
+  // Starten, aber vorher warten wir kurz auf DOM
+  setTimeout(startCountdownOverlay, 0);
 
   const FX = (()=>{ const cvs=document.getElementById('fx'); const ctx=cvs.getContext('2d',{alpha:true});
     let w=0,h=0,flakes=[],run=true;
@@ -484,7 +571,7 @@
           playSFX('win');
         } catch(e) { return _toast('Fehler beim Laden'); }
         
-    // 2. Chance: Snack (10%) - HIER EINGEFÜGT
+    // 2. Chance: Snack (10%) - WIEDER EINGEFÜGT
     } else if (roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher) {
         const nonce = randHex(8);
         try {
@@ -571,12 +658,10 @@
     return arr;
   }
   
-  /* ===== SHUFFLE LOGIK: Garantiert keine Wiederholung ===== */
   function shuffledMessagesFor(user){
     const seed = hash(`${user.uid}|${CONFIG.year}|MSGPOOL`);
     const rng = mul32(seed);
-    const arr = MESSAGES.slice(); // Kopie erstellen
-    // Fisher-Yates Shuffle seeded
+    const arr = MESSAGES.slice(); 
     for(let i = arr.length - 1; i > 0; i--){
       const j = Math.floor(rng() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -586,8 +671,6 @@
 
   function getMessageFor(user, dayIndex){
     const pool = shuffledMessagesFor(user);
-    // dayIndex - 1, weil Tag 1 = Index 0. 
-    // Wenn Pool > 24, gibt es KEINE Wiederholung.
     const idx = (dayIndex - 1) % pool.length;
     return pool[idx];
   }
