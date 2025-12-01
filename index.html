@@ -747,7 +747,7 @@
       register: async(n,e,p)=>{ 
         const uid='u'+hash(e); 
         if(store.get('u_'+uid)) throw new Error('E-Mail bereits registriert.');
-        store.set('u_'+uid, {name:n,email:e}); 
+        store.set('u_'+uid, {name:n,email:e, isAdmin: false}); // Setze isAdmin auf false bei Registrierung
         store.set('sess', {uid,name:n, isAuthReady: true}); 
         cbs.forEach(f=>f({uid,name:n, isAuthReady: true})); 
         _toast('Registrierung erfolgreich. Willkommen!');
@@ -765,7 +765,6 @@
       logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); _toast('Abgemeldet.'); },
       onAuth: (fn)=>{ 
         cbs.push(fn); 
-        // Füge isAuthReady: true für Demo-Modus hinzu, da Auth sofort fertig ist
         const user = store.get('sess');
         if (user) user.isAuthReady = true; 
         fn(user); 
@@ -780,25 +779,41 @@
         const old=store.get('data_'+uid)||{}; 
         store.set('data_'+uid, {...old, ...d}); 
       },
-      // Simuliere isAdmin und onAllUsers für Demo
-      isAdmin: async()=>true,
+      // Simuliere isAdmin: Im Demo-Modus ist man nur Admin, wenn explizit ein Flag gesetzt ist.
+      isAdmin: async(uid) => {
+          const u = store.get('u_'+uid);
+          // Hartkodierter Check für den Demo Admin zum Testen
+          if (uid === 'u'+hash('admin@demo.de')) return true; 
+          return u && u.isAdmin === true;
+      },
       onAllUsers: async(fn)=>{ 
-        const userA = store.get('u_u'+hash('userA@demo.de')) || {name:'Demo User A', opened:{1:true,2:true}};
-        const userB = store.get('u_u'+hash('userB@demo.de')) || {name:'Demo User B', opened:{1:true}};
-        fn([
-          {name:userA.name, opened:store.get('data_u'+hash('userA@demo.de'))?.opened || {1:true,2:true}}, 
-          {name:userB.name, opened:store.get('data_u'+hash('userB@demo.de'))?.opened || {1:true}}
-        ]); 
+        // Lese alle registrierten Benutzer aus dem Store und filtere Demo-Daten heraus
+        const users = [];
+        for (const key in localStorage) {
+            if (key.startsWith('adv_v2_u_u')) { // Finde alle User-Infos
+                const userData = store.get(key.substring(8)); // 'u_'+uid
+                const userDoc = store.get('data_' + userData.uid);
+                if (userData) {
+                    users.push({
+                        uid: userData.uid,
+                        name: userData.name,
+                        opened: userDoc ? userDoc.opened : {}
+                    });
+                }
+            }
+        }
+        fn(users);
       },
       // Simuliere Voucher-Signierung
       signVoucher: async({day,type,nonce})=>{ 
-          // Diese Logik wird auch im Demo-Service verwendet, um die Voucher-Prüfung zu simulieren
+          const sess = store.get('sess');
+          if (!sess) throw new Error('Anmeldung erforderlich');
           const code=`D-${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${nonce.slice(0, 4)}`;
           const vouchers = store.get('vouchers') || {};
-          const uid = store.get('sess').uid;
-          vouchers[code] = { code, type, day, uid, name: store.get('u_'+uid).name, year: CONFIG.year, redeemed: false };
+          const uid = sess.uid;
+          vouchers[code] = { code, type, day, uid, name: sess.name, year: CONFIG.year, redeemed: false };
           store.set('vouchers', vouchers);
-          return {code: code, token: 'xxx', uid: uid, name: store.get('u_'+uid).name, year: CONFIG.year}; 
+          return {code: code, token: 'xxx', uid: uid, name: sess.name, year: CONFIG.year}; 
       },
       // Admin Logik für Demo
       verifyVoucher: async(code) => {
@@ -1053,7 +1068,7 @@
             // Privates Dokument (enthält Name)
             await setDoc(doc(db, USERS_COL, uid), { name: name, email: email, createdAt: new Date() });
 
-            // Öffentliches Dokument (für Leaderboard)
+            // WICHTIGE KORREKTUR: Name beim ersten Setzen in das öffentliche Dokument aufnehmen
             await setDoc(doc(db, PUBLIC_DATA_COL, uid), { name: name, opened: {}, openedCount: 0, lastLogin: new Date() }, { merge: true });
 
             _toast('Registrierung erfolgreich. Willkommen!');
