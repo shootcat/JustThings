@@ -624,28 +624,81 @@
   });
 
   document.getElementById('btn-signout').onclick = () => svc.logout();
+  
+  // --- Verbesserte Fehlerbehandlung für Login
   document.getElementById('btn-login').onclick = async () => {
     document.getElementById('authMsg').textContent = 'Melde an...';
     try { 
-        await svc.login(document.getElementById('email').value, document.getElementById('pw').value); 
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pw').value;
+        if (!email || !password) throw new Error("E-Mail und Passwort dürfen nicht leer sein.");
+
+        await svc.login(email, password); 
         document.getElementById('authMsg').textContent = 'Erfolgreich angemeldet!';
     }
     catch(e){ 
-        console.error(e);
-        document.getElementById('authMsg').textContent = `Anmeldung fehlgeschlagen: ${e.message.includes('password') ? 'E-Mail oder Passwort falsch.' : e.message}`; 
+        console.error("Anmeldefehler:", e);
+        let freundlicheNachricht = "Ein unbekannter Fehler ist aufgetreten.";
+
+        if (e.code) {
+             switch(e.code) {
+                 case 'auth/user-not-found':
+                 case 'auth/wrong-password':
+                 case 'auth/invalid-credential':
+                     freundlicheNachricht = 'E-Mail oder Passwort ist falsch.';
+                     break;
+                 case 'auth/invalid-email':
+                     freundlicheNachricht = 'Die E-Mail-Adresse ist ungültig.';
+                     break;
+                 default:
+                     freundlicheNachricht = `Anmeldefehler (${e.code}).`;
+             }
+        } else if (e.message) {
+            freundlicheNachricht = e.message;
+        }
+
+        document.getElementById('authMsg').textContent = `Anmeldung fehlgeschlagen: ${freundlicheNachricht}`; 
     }
   };
+
+  // --- Verbesserte Fehlerbehandlung für Registrierung
   document.getElementById('btn-register').onclick = async () => {
     document.getElementById('authMsg').textContent = 'Registriere...';
     try { 
         const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('pw').value;
+
         if (!name) throw new Error("Bitte gib einen Namen ein.");
-        await svc.register(name, document.getElementById('email').value, document.getElementById('pw').value); 
+        if (!email || !password) throw new Error("E-Mail und Passwort dürfen nicht leer sein.");
+
+        await svc.register(name, email, password); 
         document.getElementById('authMsg').textContent = 'Registrierung erfolgreich!';
     }
     catch(e){ 
-        console.error(e);
-        document.getElementById('authMsg').textContent = `Registrierung fehlgeschlagen: ${e.message.includes('email-already-in-use') ? 'E-Mail bereits registriert.' : e.message}`; 
+        console.error("Registrierungsfehler:", e);
+        let freundlicheNachricht = "Ein unbekannter Fehler ist aufgetreten.";
+
+        if (e.code) {
+             switch(e.code) {
+                 case 'auth/email-already-in-use':
+                     freundlicheNachricht = 'Diese E-Mail-Adresse ist bereits registriert.';
+                     break;
+                 case 'auth/invalid-email':
+                     freundlicheNachricht = 'Die E-Mail-Adresse ist ungültig.';
+                     break;
+                 case 'auth/weak-password':
+                     freundlicheNachricht = 'Das Passwort ist zu schwach (mindestens 6 Zeichen).';
+                     break;
+                 default:
+                     freundlicheNachricht = `Registrierungsfehler (${e.code}).`;
+             }
+        } else if (e.message) {
+            // Für Fehler, die nicht von Firebase stammen (z.B. "Bitte gib einen Namen ein.")
+            freundlicheNachricht = e.message;
+        }
+
+        document.getElementById('authMsg').textContent = `Registrierung fehlgeschlagen: ${freundlicheNachricht}`; 
     }
   };
 
