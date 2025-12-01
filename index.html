@@ -655,14 +655,20 @@
   
   // --- Verbesserte Fehlerbehandlung für Login
   document.getElementById('btn-login').onclick = async () => {
-    document.getElementById('authMsg').textContent = 'Melde an...';
+    const btn = document.getElementById('btn-login');
+    const msgEl = document.getElementById('authMsg');
+
+    msgEl.textContent = 'Melde an... Bitte warten...';
+    btn.disabled = true;
+    await new Promise(resolve => setTimeout(resolve, 0)); 
+
     try { 
         const email = document.getElementById('email').value;
         const password = document.getElementById('pw').value;
         if (!email || !password) throw new Error("E-Mail und Passwort dürfen nicht leer sein.");
 
         await svc.login(email, password); 
-        document.getElementById('authMsg').textContent = 'Erfolgreich angemeldet!';
+        msgEl.textContent = 'Erfolgreich angemeldet!';
     }
     catch(e){ 
         console.error("Anmeldefehler:", e);
@@ -685,13 +691,26 @@
             freundlicheNachricht = e.message;
         }
 
-        document.getElementById('authMsg').textContent = `Anmeldung fehlgeschlagen: ${freundlicheNachricht}`; 
+        msgEl.textContent = `Anmeldung fehlgeschlagen: ${freundlicheNachricht}`; 
+    } finally {
+        btn.disabled = false;
+        // Re-enable the register button for consistency
+        document.getElementById('btn-register').disabled = false;
     }
   };
 
   // --- Verbesserte Fehlerbehandlung für Registrierung
   document.getElementById('btn-register').onclick = async () => {
-    document.getElementById('authMsg').textContent = 'Registriere...';
+    const btn = document.getElementById('btn-register');
+    const msgEl = document.getElementById('authMsg');
+    
+    // UI Feedback: Set message and disable button immediately
+    msgEl.textContent = 'Registriere... Bitte warten...';
+    btn.disabled = true;
+
+    // Yield the thread to ensure UI updates before the heavy async call starts
+    await new Promise(resolve => setTimeout(resolve, 0)); 
+
     try { 
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
@@ -701,7 +720,7 @@
         if (!email || !password) throw new Error("E-Mail und Passwort dürfen nicht leer sein.");
 
         await svc.register(name, email, password); 
-        document.getElementById('authMsg').textContent = 'Registrierung erfolgreich!';
+        msgEl.textContent = 'Registrierung erfolgreich!';
     }
     catch(e){ 
         console.error("Registrierungsfehler:", e);
@@ -726,7 +745,11 @@
             freundlicheNachricht = e.message;
         }
 
-        document.getElementById('authMsg').textContent = `Registrierung fehlgeschlagen: ${freundlicheNachricht}`; 
+        msgEl.textContent = `Registrierung fehlgeschlagen: ${freundlicheNachricht}`; 
+    } finally {
+        btn.disabled = false;
+        // Re-enable the login button for consistency
+        document.getElementById('btn-login').disabled = false;
     }
   };
 
