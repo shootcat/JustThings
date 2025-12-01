@@ -273,7 +273,7 @@
   // Firebase Imports (using CDN links)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, onSnapshot, collection, query, getDocs, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, onSnapshot, collection, query, getDoc, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
   
   // setLogLevel('debug'); // Kann zum Debuggen in der Konsole nützlich sein
 
@@ -474,27 +474,30 @@
       if (user) {
         userId = user.uid;
         
-        // --- FIX: Erzwinge Neuladen des Profils nach Registrierung ---
-        // Wenn displayName null ist UND der Nutzer nicht anonym ist, bedeutet das, dass das Profil 
-        // gerade aktualisiert wird. Wir warten kurz auf das Update.
-        if (user.displayName === null && !user.isAnonymous) {
-             try {
-                // Wichtig: Firebase muss das Profil neu vom Server holen.
-                await user.reload(); 
-                // Holen Sie die aktualisierte Benutzerinstanz
-                user = auth.currentUser; 
-             } catch (e) {
-                 console.warn("Failed to reload user profile after auth state change:", e);
-             }
+        let userName = user.displayName;
+        
+        // NEU: Wenn displayName fehlt und es kein anonymer User ist, 
+        // holen wir den Namen direkt aus dem Public Firestore Doc (der sollte da sein).
+        if (!userName && !user.isAnonymous) {
+            try {
+                const docRef = PATHS.publicUserDoc(user.uid);
+                const docSnap = await getDoc(docRef); // Holen Sie das Document
+                if (docSnap.exists() && docSnap.data().name) {
+                    userName = docSnap.data().name;
+                } else {
+                    // Fallback, wenn Firestore auch keinen Namen hat (was ein Fehler wäre)
+                    userName = 'Unbekannt (Registriert)'; 
+                }
+            } catch (e) {
+                console.warn("Failed to fetch name from Firestore public doc:", e);
+                userName = 'Unbekannt (Fehler)';
+            }
         }
         
-        // Finalen Namen bestimmen
-        let userName = user.displayName;
         if (!userName && user.isAnonymous) {
             userName = 'Gast'; 
         } else if (!userName) {
-            // Fallback, wenn auch nach Reload der Name fehlt (sollte nicht passieren)
-            userName = 'Unbekannt (Registriert)'; 
+             userName = 'Unbekannt (Registriert)'; 
         }
 
         const appUser = { uid: user.uid, name: userName, isAnonymous: user.isAnonymous };
@@ -516,12 +519,12 @@
         await updateProfile(userCred.user, { displayName: name });
         // Setze initiale öffentliche Daten für das Leaderboard
         await setDoc(PATHS.publicUserDoc(userCred.user.uid), { name: name, openedCount: 0 });
-        await new Promise(resolve => setTimeout(resolve, 1000)); // **NEU: 1 Sekunde Puffer**
+        // KEIN setTimeout mehr
         return true;
       },
       login: async(email, password)=>{ 
         await signInWithEmailAndPassword(auth, email, password); 
-        await new Promise(resolve => setTimeout(resolve, 1000)); // **NEU: 1 Sekunde Puffer**
+        // KEIN setTimeout mehr
         return true;
       },
       logout: async()=>{ await signOut(auth); },
@@ -622,7 +625,6 @@
       const welcomeName = user.name === 'Gast' ? 'Gast (Bitte registrieren)' : user.name;
       document.getElementById('userBox').textContent = welcomeName;
       document.getElementById('who').textContent = welcomeName;
-      document.getElementById('btn-signout').style.display='block';
       
       // onUserDoc Listener nur starten, wenn Firebase ready ist und UID existiert
       if (db && user.uid) {
