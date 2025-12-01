@@ -473,9 +473,17 @@
       isAuthReady = true;
       if (user) {
         userId = user.uid;
-        // Wichtig: displayName kann null sein, wenn man sich anonym anmeldet oder registriert,
-        // bevor man das Profil aktualisiert.
-        const appUser = { uid: user.uid, name: user.displayName || 'Gast' };
+        
+        // Wenn displayName gesetzt ist, verwenden wir diesen, sonst prüfen wir, ob es ein anonymer Nutzer ist.
+        let userName = user.displayName;
+        if (!userName && user.isAnonymous) {
+            userName = 'Gast'; 
+        } else if (!userName) {
+            // Dies sollte nur bei fehlgeschlagenem updateProfile passieren
+            userName = 'Registrierter User'; 
+        }
+
+        const appUser = { uid: user.uid, name: userName, isAnonymous: user.isAnonymous };
         authCbs.forEach(cb => cb(appUser));
         document.getElementById('authMsg').textContent = ''; // Auth-Fehlermeldungen löschen
       } else {
@@ -503,15 +511,13 @@
       logout: async()=>{ await signOut(auth); },
       onAuth: (fn)=>{ 
         authCbs.push(fn); 
-        // Falls bereits angemeldet, sofort den Status übermitteln
-        if (isAuthReady && auth.currentUser) {
-             fn({ uid: auth.currentUser.uid, name: auth.currentUser.displayName || 'Gast' });
-        }
+        // Wir verlassen uns auf den onAuthStateChanged Listener, der die fn triggert
       },
 
       // --- USER DATA (Private State) ---
-      onUserDoc: async(uid, fn)=>{ 
+      onUserDoc: (uid, fn)=>{ 
         if (userDocUnsub) userDocUnsub(); 
+        // WICHTIG: Kein 'await' hier, onSnapshot ist ein Listener und soll nicht blockieren.
         userDocUnsub = onSnapshot(PATHS.userDoc(uid), (doc) => {
           fn(doc.exists ? doc.data() : null);
         }, (error) => { console.error("Error listening to user doc:", error); });
@@ -537,7 +543,7 @@
         // Die Admin Tools sind in dieser Version deaktiviert.
         return false;
       },
-      onAllUsers: async(fn)=>{
+      onAllUsers: (fn)=>{
         if (allUsersUnsub) allUsersUnsub(); 
         allUsersUnsub = onSnapshot(PATHS.publicUserCol, (snapshot) => {
             const users = snapshot.docs.map(doc => ({
@@ -596,13 +602,16 @@
     if(user){
       document.getElementById('authPanel').style.display='none';
       document.getElementById('kalPanel').style.display='block';
-      document.getElementById('userBox').textContent = user.name;
-      document.getElementById('who').textContent = user.name;
+      
+      const welcomeName = user.name === 'Gast' ? 'Gast (Bitte registrieren)' : user.name;
+      document.getElementById('userBox').textContent = welcomeName;
+      document.getElementById('who').textContent = welcomeName;
       document.getElementById('btn-signout').style.display='block';
       
       // onUserDoc Listener nur starten, wenn Firebase ready ist und UID existiert
       if (db && user.uid) {
-        await svc.onUserDoc(user.uid, data => {
+        // WICHTIG: Das 'await' wurde hier entfernt, um das Rendering nicht zu blockieren
+        svc.onUserDoc(user.uid, data => {
           state = data || { opened:{}, rewards:{} };
           renderGrid(user);
         });
