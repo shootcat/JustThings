@@ -166,7 +166,7 @@
   <div class="wrap">
     <div class="panel auth" id="authPanel">
       <h2 style="margin:4px 0 14px 0">Anmelden oder registrieren</h2>
-      <div class="hint">Im DEMO-Modus bleiben Daten lokal.</div>
+      <div class="hint">Jetzt mit echter Registrierung (Speicherung über Firebase)</div>
       <div class="row" style="margin-top:14px">
         <div style="flex:1; min-width:260px">
           <label for="name">Anzeigename</label>
@@ -255,7 +255,64 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-  const IS_DEMO = location.protocol === 'file:';
+  // --- FIREBASE CONFIGURATION & INITIALIZATION ---
+  
+  // Environment variables provided by the Canvas environment
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  const firebaseConfig = {
+    // User-provided Firebase Configuration
+    apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+    authDomain: "geburt-ded5c.firebaseapp.com",
+    projectId: "geburt-ded5c",
+    storageBucket: "geburt-ded5c.firebasestorage.app",
+    messagingSenderId: "528584992005",
+    appId: "1:528584992005:web:14dea3f914a432e317c36c",
+    measurementId: "G-SX8G2KPVL8"
+  };
+
+  // Firebase Imports (using CDN links)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot, collection, query, getDocs, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  
+  // setLogLevel('debug'); // Kann zum Debuggen in der Konsole nützlich sein
+
+  let app, auth, db;
+  let userId = null;
+  let isAuthReady = false;
+
+  // Initialisiere Firebase und Authentifizierung
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    
+    // Versuchter Sign-In mit dem Custom Token der Umgebung
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    if (initialAuthToken) {
+        // Sign-in mit Custom Token, Fallback zu Anonym, falls Token fehlschlägt
+        signInWithCustomToken(auth, initialAuthToken).catch(e => {
+            console.error("Custom token sign-in failed. Falling back to anonymous.", e);
+            signInAnonymously(auth);
+        });
+    } else {
+        // Fallback für Umgebungen ohne Custom Token
+        signInAnonymously(auth);
+    }
+  } catch(e) {
+    console.error("Firebase initialization failed:", e);
+  }
+
+  // Pfade für Firestore (Private und Public Collections)
+  const PATHS = {
+      // Private User Data (State: opened doors, rewards)
+      userDoc: (uid) => doc(db, `artifacts/${appId}/users/${uid}/calendar_data/state`),
+      // Public User Data (Leaderboard)
+      publicUserCol: collection(db, `artifacts/${appId}/public/data/calendar_users`),
+      publicUserDoc: (uid) => doc(db, `artifacts/${appId}/public/data/calendar_users/${uid}`),
+  };
+
+  const IS_DEMO = false; // Firebase ist jetzt aktiv, Demo-Mode deaktiviert
   const DOOR_IMAGES = true; 
   const urlParams = new URLSearchParams(window.location.search);
   const simDateParam = urlParams.get('sim_date');
@@ -302,9 +359,7 @@
 
   document.getElementById('appLogo').onclick = () => { playSFX('win'); triggerSanta(); CONFETTI.burst(window.innerWidth/2, window.innerHeight/2); _toast('🎄 Ho Ho Ho! 🎄'); };
 
-  /* ===== ASCII CINEMA ENTFERNT ===== */
-
-  /* ===== GROSSER POOL ===== */
+  /* ===== GROSSER POOL (unverändert) ===== */
   const MESSAGES = [
     {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
     {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
@@ -406,6 +461,132 @@
     return { burst:(x,y)=>{ for(let i=0;i<40;i++) p.push({x,y,vx:(Math.random()-.5)*20,vy:(Math.random()-1)*20,c:colors[Math.floor(Math.random()*colors.length)],l:100}); loop(); } }
   })();
 
+  // --- Service Implementation: Live (Firebase) ---
+  async function makeLiveService(){
+    let authCbs = [];
+    let userDocUnsub = null;
+    let allUsersUnsub = null;
+
+    // 1. Authentication State Listener
+    // onAuthStateChanged wird ausgeführt, sobald der anfängliche Anmeldeprozess (inkl. Custom Token) abgeschlossen ist.
+    onAuthStateChanged(auth, user => {
+      isAuthReady = true;
+      if (user) {
+        userId = user.uid;
+        // Wichtig: displayName kann null sein, wenn man sich anonym anmeldet oder registriert,
+        // bevor man das Profil aktualisiert.
+        const appUser = { uid: user.uid, name: user.displayName || 'Gast' };
+        authCbs.forEach(cb => cb(appUser));
+        document.getElementById('authMsg').textContent = ''; // Auth-Fehlermeldungen löschen
+      } else {
+        userId = null;
+        authCbs.forEach(cb => cb(null));
+      }
+    });
+
+    // Helper, um die aktuelle UID zu erhalten
+    const getUid = () => auth.currentUser?.uid;
+
+    return {
+      // --- AUTHENTICATION METHODS ---
+      register: async(name, email, password)=>{ 
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCred.user, { displayName: name });
+        // Setze initiale öffentliche Daten für das Leaderboard
+        await setDoc(PATHS.publicUserDoc(userCred.user.uid), { name: name, openedCount: 0 });
+        return true;
+      },
+      login: async(email, password)=>{ 
+        await signInWithEmailAndPassword(auth, email, password); 
+        return true;
+      },
+      logout: async()=>{ await signOut(auth); },
+      onAuth: (fn)=>{ 
+        authCbs.push(fn); 
+        // Falls bereits angemeldet, sofort den Status übermitteln
+        if (isAuthReady && auth.currentUser) {
+             fn({ uid: auth.currentUser.uid, name: auth.currentUser.displayName || 'Gast' });
+        }
+      },
+
+      // --- USER DATA (Private State) ---
+      onUserDoc: async(uid, fn)=>{ 
+        if (userDocUnsub) userDocUnsub(); 
+        userDocUnsub = onSnapshot(PATHS.userDoc(uid), (doc) => {
+          fn(doc.exists ? doc.data() : null);
+        }, (error) => { console.error("Error listening to user doc:", error); });
+      },
+      setUserDoc: async(uid, data)=>{ 
+        // 1. Private State aktualisieren (opened/rewards)
+        await setDoc(PATHS.userDoc(uid), data, { merge: true }); 
+
+        // 2. Öffentliche Daten aktualisieren (openedCount für Leaderboard)
+        if(data.opened) {
+          const openedCount = Object.keys(data.opened).length;
+          await setDoc(PATHS.publicUserDoc(uid), { 
+            name: auth.currentUser.displayName || 'Gast', 
+            openedCount: openedCount 
+          }, { merge: true }).catch(e => {
+            console.error("Failed to update public user doc:", e);
+          });
+        }
+      },
+
+      // --- LEADERBOARD & ADMIN ---
+      isAdmin: async(uid)=> {
+        // Die Admin Tools sind in dieser Version deaktiviert.
+        return false;
+      },
+      onAllUsers: async(fn)=>{
+        if (allUsersUnsub) allUsersUnsub(); 
+        allUsersUnsub = onSnapshot(PATHS.publicUserCol, (snapshot) => {
+            const users = snapshot.docs.map(doc => ({
+                uid: doc.id,
+                name: doc.data().name || 'Unbekannt',
+                // Da wir nur openedCount speichern, simulieren wir die 'opened' Objekt-Struktur für die renderBoard Funktion
+                opened: Array.from({length: doc.data().openedCount || 0}, (_, i) => i+1).reduce((acc, curr) => ({...acc, [curr]: true}), {})
+            }));
+            // Sortierung nach geöffneten Türchen (absteigend)
+            users.sort((a, b) => Object.keys(b.opened).length - Object.keys(a.opened).length);
+            fn(users);
+            // Das Team-Board anzeigen, sobald Daten verfügbar sind
+            document.getElementById('boardPanel').style.display='block';
+        }, (error) => { console.error("Error listening to all users:", error); });
+      },
+
+      // --- VOUCHER SIGNING (Simulated Securely) ---
+      signVoucher: async({day, type, nonce})=>{ 
+        // HINWEIS: In einer Produktionsumgebung müsste dieser Aufruf über eine
+        // sichere Backend-Funktion (z.B. Firebase Cloud Function) laufen,
+        // um das Ergebnis zu verifizieren und den Code kryptografisch zu signieren.
+        // Hier wird eine einfache, client-seitige Signatur simuliert.
+        const code = `${type.toUpperCase()}-${day}-${nonce}`;
+        const uid = getUid();
+        
+        return {
+          code: code,
+          token: hash(code + uid + CONFIG.year) // Einfache, lokale 'Signatur'
+        }; 
+      }
+    };
+  }
+
+  async function makeDemoService(){
+    const store = { get:(k)=>JSON.parse(localStorage.getItem('adv_v2_'+k)||'null'), set:(k,v)=>localStorage.setItem('adv_v2_'+k, JSON.stringify(v)) };
+    let cbs = [];
+    return {
+      register: async(n,e,p)=>{ const uid='u'+hash(e); store.set('u_'+uid, {name:n,email:e}); store.set('sess', {uid,name:n}); cbs.forEach(f=>f({uid,name:n})); return true; },
+      login: async(e,p)=>{ const uid='u'+hash(e); if(!store.get('u_'+uid)) throw new Error('User unbekannt'); store.set('sess', {uid,name:store.get('u_'+uid).name}); cbs.forEach(f=>f({uid,name:store.get('u_'+uid).name})); return true; },
+      logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); },
+      onAuth: (fn)=>{ cbs.push(fn); fn(store.get('sess')); },
+      onUserDoc: async(uid, fn)=>{ const fire=()=>fn(store.get('data_'+uid)); fire(); setInterval(fire, 1000); },
+      setUserDoc: async(uid, d)=>{ const old=store.get('data_'+uid)||{}; store.set('data_'+uid, {...old, ...d}); },
+      isAdmin: async()=>true,
+      onAllUsers: async(fn)=>{ fn([{name:'Max', opened:{1:true,2:true}}, {name:'Lisa', opened:{1:true}}]); },
+      signVoucher: async({day,type,nonce})=>{ return {code:`DEMO-${type}-${day}-${nonce}`, token:'xxx'}; }
+    };
+  }
+
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
   let state = { opened:{}, rewards:{} };
 
@@ -418,14 +599,21 @@
       document.getElementById('userBox').textContent = user.name;
       document.getElementById('who').textContent = user.name;
       document.getElementById('btn-signout').style.display='block';
-      await svc.onUserDoc(user.uid, data => {
-        state = data || { opened:{}, rewards:{} };
-        renderGrid(user);
-      });
-      if(await svc.isAdmin(user.uid)){
-        document.getElementById('boardPanel').style.display='block';
-        document.getElementById('adminTools').style.display='block';
+      
+      // onUserDoc Listener nur starten, wenn Firebase ready ist und UID existiert
+      if (db && user.uid) {
+        await svc.onUserDoc(user.uid, data => {
+          state = data || { opened:{}, rewards:{} };
+          renderGrid(user);
+        });
+        
+        // onAllUsers Listener starten, wenn Firebase ready ist
         svc.onAllUsers(renderBoard);
+      }
+      
+      // Admin Tools anzeigen (falls isAdmin true) - aktuell deaktiviert
+      if(await svc.isAdmin(user.uid)){
+        document.getElementById('adminTools').style.display='block';
       }
     } else {
       document.getElementById('authPanel').style.display='block';
@@ -437,12 +625,28 @@
 
   document.getElementById('btn-signout').onclick = () => svc.logout();
   document.getElementById('btn-login').onclick = async () => {
-    try { await svc.login(document.getElementById('email').value, document.getElementById('pw').value); }
-    catch(e){ document.getElementById('authMsg').textContent = e.message; }
+    document.getElementById('authMsg').textContent = 'Melde an...';
+    try { 
+        await svc.login(document.getElementById('email').value, document.getElementById('pw').value); 
+        document.getElementById('authMsg').textContent = 'Erfolgreich angemeldet!';
+    }
+    catch(e){ 
+        console.error(e);
+        document.getElementById('authMsg').textContent = `Anmeldung fehlgeschlagen: ${e.message.includes('password') ? 'E-Mail oder Passwort falsch.' : e.message}`; 
+    }
   };
   document.getElementById('btn-register').onclick = async () => {
-    try { await svc.register(document.getElementById('name').value, document.getElementById('email').value, document.getElementById('pw').value); }
-    catch(e){ document.getElementById('authMsg').textContent = e.message; }
+    document.getElementById('authMsg').textContent = 'Registriere...';
+    try { 
+        const name = document.getElementById('name').value;
+        if (!name) throw new Error("Bitte gib einen Namen ein.");
+        await svc.register(name, document.getElementById('email').value, document.getElementById('pw').value); 
+        document.getElementById('authMsg').textContent = 'Registrierung erfolgreich!';
+    }
+    catch(e){ 
+        console.error(e);
+        document.getElementById('authMsg').textContent = `Registrierung fehlgeschlagen: ${e.message.includes('email-already-in-use') ? 'E-Mail bereits registriert.' : e.message}`; 
+    }
   };
 
   let lastJSON = '';
@@ -497,6 +701,8 @@
   }
 
   async function openDoor(user, day, x, y){
+    if (!user.uid) return _toast('Bitte zuerst registrieren/anmelden!');
+
     CONFETTI.burst(x,y);
     const seed = hash(`${user.uid}|${CONFIG.year}|${day}`);
     const rng = mul32(seed);
@@ -507,6 +713,7 @@
     if(roll < CONFIG.probabilities.mealVoucher){
         const nonce = randHex(8);
         try {
+          // Asynchronen Aufruf (simuliert) zum Signieren des Vouchers
           const sig = await svc.signVoucher({day, type:'meal', nonce});
           reward = { kind:'voucher', payload:{title:'Gratis Mittag', type:'meal', desc:'Gutschein für die Kantine (bis 4€)', code:sig.code, ...sig} };
           playSFX('win');
@@ -515,6 +722,7 @@
     } else if (roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher) {
         const nonce = randHex(8);
         try {
+          // Asynchronen Aufruf (simuliert) zum Signieren des Vouchers
           const sig = await svc.signVoucher({day, type:'snack', nonce});
           reward = { kind:'voucher', payload:{title:'Süßigkeit', type:'snack', desc:'Ein Snack nach Wahl an der Theke', code:sig.code, ...sig} };
           playSFX('win');
@@ -528,6 +736,7 @@
 
     const opened = {...state.opened, [day]:true};
     const rewards = {...state.rewards, [day]:reward};
+    // Speichere den neuen Zustand in Firebase
     await svc.setUserDoc(user.uid, { opened, rewards });
     showReward(day, reward, user);
   }
@@ -580,7 +789,8 @@
   function renderBoard(users){
     let h = '<table><thead><tr><th>Name</th><th>Fortschritt</th></tr></thead><tbody>';
     users.forEach(u => {
-      const c = Object.keys(u.opened||{}).length;
+      // opened count kommt jetzt direkt aus Firestore als doc.data().openedCount
+      const c = Object.keys(u.opened||{}).length; 
       h += `<tr><td>${u.name||'Unbekannt'}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#333;border-radius:3px;overflow:hidden"><div style="width:${(c/24)*100}%;background:#5de07a;height:100%"></div></div> ${c}</div></td></tr>`;
     });
     h += '</tbody></table>';
@@ -615,23 +825,7 @@
   function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=((h<<5)-h)+s.charCodeAt(i)|0; return h>>>0; }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   
-  async function makeDemoService(){
-    const store = { get:(k)=>JSON.parse(localStorage.getItem('adv_v2_'+k)||'null'), set:(k,v)=>localStorage.setItem('adv_v2_'+k, JSON.stringify(v)) };
-    let cbs = [];
-    return {
-      register: async(n,e,p)=>{ const uid='u'+hash(e); store.set('u_'+uid, {name:n,email:e}); store.set('sess', {uid,name:n}); cbs.forEach(f=>f({uid,name:n})); return true; },
-      login: async(e,p)=>{ const uid='u'+hash(e); if(!store.get('u_'+uid)) throw new Error('User unbekannt'); store.set('sess', {uid,name:store.get('u_'+uid).name}); cbs.forEach(f=>f({uid,name:store.get('u_'+uid).name})); return true; },
-      logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); },
-      onAuth: (fn)=>{ cbs.push(fn); fn(store.get('sess')); },
-      onUserDoc: async(uid, fn)=>{ const fire=()=>fn(store.get('data_'+uid)); fire(); setInterval(fire, 1000); },
-      setUserDoc: async(uid, d)=>{ const old=store.get('data_'+uid)||{}; store.set('data_'+uid, {...old, ...d}); },
-      isAdmin: async()=>true,
-      onAllUsers: async(fn)=>{ fn([{name:'Max', opened:{1:true,2:true}}, {name:'Lisa', opened:{1:true}}]); },
-      signVoucher: async({day,type,nonce})=>{ return {code:`DEMO-${type}-${day}-${nonce}`, token:'xxx'}; }
-    };
-  }
-
-  async function makeLiveService(){ return makeDemoService(); }
+  // Die makeDemoService-Funktion bleibt, wird aber nicht mehr genutzt, da IS_DEMO auf false steht.
   </script>
 </body>
 </html>
