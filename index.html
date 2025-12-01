@@ -469,18 +469,32 @@
 
     // 1. Authentication State Listener
     // onAuthStateChanged wird ausgeführt, sobald der anfängliche Anmeldeprozess (inkl. Custom Token) abgeschlossen ist.
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       isAuthReady = true;
       if (user) {
         userId = user.uid;
         
-        // Wenn displayName gesetzt ist, verwenden wir diesen, sonst prüfen wir, ob es ein anonymer Nutzer ist.
+        // --- FIX: Erzwinge Neuladen des Profils nach Registrierung ---
+        // Wenn displayName null ist UND der Nutzer nicht anonym ist, bedeutet das, dass das Profil 
+        // gerade aktualisiert wird. Wir warten kurz auf das Update.
+        if (user.displayName === null && !user.isAnonymous) {
+             try {
+                // Wichtig: Firebase muss das Profil neu vom Server holen.
+                await user.reload(); 
+                // Holen Sie die aktualisierte Benutzerinstanz
+                user = auth.currentUser; 
+             } catch (e) {
+                 console.warn("Failed to reload user profile after auth state change:", e);
+             }
+        }
+        
+        // Finalen Namen bestimmen
         let userName = user.displayName;
         if (!userName && user.isAnonymous) {
             userName = 'Gast'; 
         } else if (!userName) {
-            // Dies sollte nur bei fehlgeschlagenem updateProfile passieren
-            userName = 'Registrierter User'; 
+            // Fallback, wenn auch nach Reload der Name fehlt (sollte nicht passieren)
+            userName = 'Unbekannt (Registriert)'; 
         }
 
         const appUser = { uid: user.uid, name: userName, isAnonymous: user.isAnonymous };
@@ -610,7 +624,8 @@
       
       // onUserDoc Listener nur starten, wenn Firebase ready ist und UID existiert
       if (db && user.uid) {
-        // WICHTIG: Das 'await' wurde hier entfernt, um das Rendering nicht zu blockieren
+        // Das 'await' wurde hier entfernt, um das Rendering nicht zu blockieren, 
+        // die reload-Logik ist jetzt im onAuthStateChanged Handler
         svc.onUserDoc(user.uid, data => {
           state = data || { opened:{}, rewards:{} };
           renderGrid(user);
