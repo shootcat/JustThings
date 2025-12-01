@@ -516,10 +516,12 @@
         await updateProfile(userCred.user, { displayName: name });
         // Setze initiale öffentliche Daten für das Leaderboard
         await setDoc(PATHS.publicUserDoc(userCred.user.uid), { name: name, openedCount: 0 });
+        await new Promise(resolve => setTimeout(resolve, 1000)); // **NEU: 1 Sekunde Puffer**
         return true;
       },
       login: async(email, password)=>{ 
         await signInWithEmailAndPassword(auth, email, password); 
+        await new Promise(resolve => setTimeout(resolve, 1000)); // **NEU: 1 Sekunde Puffer**
         return true;
       },
       logout: async()=>{ await signOut(auth); },
@@ -712,7 +714,7 @@
                      freundlicheNachricht = 'Die E-Mail-Adresse ist ungültig.';
                      break;
                  case 'auth/weak-password':
-                     freundlicheNachricht = 'Das Passwort ist zu schwach (mindestens 6 Zeichen).';
+                     freundliche Nachricht = 'Das Passwort ist zu schwach (mindestens 6 Zeichen).';
                      break;
                  default:
                      freundlicheNachricht = `Registrierungsfehler (${e.code}).`;
