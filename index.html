@@ -140,8 +140,6 @@
   #countdownOverlay .box{ max-width:700px; margin:20px auto; color:#fff; width:100%; }
   #countdownOverlay .timer{ font-weight:800; font-size:clamp(32px, 6vw, 64px); letter-spacing:-1px; background: linear-gradient(to bottom, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
   
-  /* ASCII Cinema Styles entfernt */
-
   table{width:100%; border-collapse:collapse} th,td{padding:12px; border-bottom:1px solid var(--border)} th{text-align:left; color:var(--gold)}
 </style>
 </head>
@@ -166,7 +164,7 @@
   <div class="wrap">
     <div class="panel auth" id="authPanel">
       <h2 style="margin:4px 0 14px 0">Anmelden oder registrieren</h2>
-      <div class="hint" id="authModeHint">Im DEMO-Modus bleiben Daten lokal.</div>
+      <div class="hint">Verbindet zu GAB Firebase</div>
       <div class="row" style="margin-top:14px">
         <div style="flex:1; min-width:260px">
           <label for="name">Anzeigename</label>
@@ -200,7 +198,7 @@
     </div>
 
     <div class="panel" id="boardPanel" style="display:none; margin-top:16px">
-      <h3>Übersicht Team</h3>
+      <h3>Übersicht Team (Admin)</h3>
       <div id="board"></div>
       <div id="adminTools" style="margin-top:16px; display:none; border-top:1px solid var(--border); padding-top:16px">
         <h4 style="margin:0 0 10px 0">Voucher Terminal</h4>
@@ -223,21 +221,15 @@
     </div>
   </div>
 
-  <!-- UPDATED COUNTDOWN OVERLAY -->
   <div id="countdownOverlay" aria-hidden="true">
     <div class="box">
-      <!-- ASCII Animation entfernt -->
-      
-      <!-- Titel -->
       <h2 style="color:var(--gold); margin:0 0 10px 0; font-size:clamp(18px, 4vw, 24px); text-shadow:0 0 20px rgba(255,215,106,.4)">
         🎄 Dein persöhnlicher GAB Online Adventskallender 🎄
       </h2>
 
-      <!-- Timer -->
       <div class="timer" id="cdTimer">--:--:--</div>
       <div class="msg" id="cdText" style="margin-bottom:30px; color:var(--muted)">Warten auf den Start...</div>
 
-      <!-- Info Box "Was dich erwartet" -->
       <div style="padding:20px; border:1px dashed var(--border); border-radius:16px; background:rgba(255,255,255,0.03); text-align:left; margin:0 auto; width:100%">
         <h3 style="margin-top:0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px">
           <span>🎁</span> Was dich in diesem Kalender erwartet:
@@ -255,20 +247,26 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-  // Die Variable IS_DEMO wird nun auf Basis der Canvas Umgebungsvariablen gesetzt.
-  // Wenn __firebase_config definiert ist, wird der Live-Modus verwendet.
-  const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-  const IS_DEMO = !firebaseConfig; 
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-  
-  // Zeige den Hinweis für den Demo-Modus an
-  if(IS_DEMO) {
-    document.getElementById('authModeHint').textContent = 'Live-Modus nicht verfügbar. Daten bleiben lokal gespeichert.';
-  } else {
-    document.getElementById('authModeHint').textContent = 'Im Live-Modus werden deine Fortschritte in der Cloud gespeichert.';
-  }
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+  // Konfiguration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCB9fyO8mS1pgSZFYJVjcTXGHk9hGQmpU4",
+    authDomain: "geburt-ded5c.firebaseapp.com",
+    projectId: "geburt-ded5c",
+    storageBucket: "geburt-ded5c.firebasestorage.app",
+    messagingSenderId: "528584992005",
+    appId: "1:528584992005:web:14dea3f914a432e317c36c",
+    measurementId: "G-SX8G2KPVL8"
+  };
 
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const IS_DEMO = location.protocol === 'file:'; // Demo nur wenn lokal als Datei geöffnet
   const DOOR_IMAGES = true; 
   const urlParams = new URLSearchParams(window.location.search);
   const simDateParam = urlParams.get('sim_date');
@@ -315,9 +313,6 @@
 
   document.getElementById('appLogo').onclick = () => { playSFX('win'); triggerSanta(); CONFETTI.burst(window.innerWidth/2, window.innerHeight/2); _toast('🎄 Ho Ho Ho! 🎄'); };
 
-  /* ===== ASCII CINEMA ENTFERNT ===== */
-
-  /* ===== GROSSER POOL ===== */
   const MESSAGES = [
     {type:'fact', text:'Oktopusse haben drei Herzen und blaues Blut – zwei pumpen zu den Kiemen, eines durch den Körper.'},
     {type:'fact', text:'Wenn du ein Blatt Papier 42-mal falten könntest, wäre es theoretisch so dick, dass es bis zum Mond reicht.'},
@@ -419,9 +414,8 @@
     return { burst:(x,y)=>{ for(let i=0;i<40;i++) p.push({x,y,vx:(Math.random()-.5)*20,vy:(Math.random()-1)*20,c:colors[Math.floor(Math.random()*colors.length)],l:100}); loop(); } }
   })();
 
-  // Dynamische Auswahl des Service (Demo oder Live/Firebase)
   const svc = IS_DEMO ? await makeDemoService() : await makeLiveService();
-  let state = { opened:{}, rewards:{}, isAuthReady: false }; // isAuthReady hinzugefügt
+  let state = { opened:{}, rewards:{} };
 
   const grid = document.getElementById('grid');
   
@@ -433,41 +427,16 @@
       document.getElementById('who').textContent = user.name;
       document.getElementById('btn-signout').style.display='block';
       
-      // Nur wenn die Authentifizierung abgeschlossen ist (Live-Modus)
-      if (user.isAuthReady) {
-          await svc.onUserDoc(user.uid, data => {
-              state = data || { opened:{}, rewards:{} };
-              renderGrid(user);
-          });
-          if(await svc.isAdmin(user.uid)){
-              document.getElementById('boardPanel').style.display='block';
-              document.getElementById('adminTools').style.display='block';
-              svc.onAllUsers(renderBoard);
-              // Admin Tool Handler registrieren
-              setupAdminTools(svc);
-          } else {
-              // Admin Tools ausblenden, falls User kein Admin ist
-              document.getElementById('boardPanel').style.display='none';
-          }
-      } else if (IS_DEMO) {
-         // Für den Demo-Modus, wo onAuth sofort feuert und onUserDoc nicht auf Auth warten muss
-         await svc.onUserDoc(user.uid, data => {
-              state = data || { opened:{}, rewards:{} };
-              renderGrid(user);
-          });
-         if(await svc.isAdmin(user.uid)){
-              document.getElementById('boardPanel').style.display='block';
-              document.getElementById('adminTools').style.display='block';
-              svc.onAllUsers(renderBoard);
-              // Admin Tool Handler registrieren
-              setupAdminTools(svc);
-          } else {
-              // Admin Tools ausblenden, falls User kein Admin ist
-              document.getElementById('boardPanel').style.display='none';
-          }
+      await svc.onUserDoc(user.uid, data => {
+        state = data || { opened:{}, rewards:{} };
+        renderGrid(user);
+      });
+
+      if(await svc.isAdmin(user.uid)){
+        document.getElementById('boardPanel').style.display='block';
+        document.getElementById('adminTools').style.display='block';
+        svc.onAllUsers(renderBoard);
       }
-
-
     } else {
       document.getElementById('authPanel').style.display='block';
       document.getElementById('kalPanel').style.display='none';
@@ -479,11 +448,11 @@
   document.getElementById('btn-signout').onclick = () => svc.logout();
   document.getElementById('btn-login').onclick = async () => {
     try { await svc.login(document.getElementById('email').value, document.getElementById('pw').value); }
-    catch(e){ document.getElementById('authMsg').textContent = e.message; }
+    catch(e){ document.getElementById('authMsg').textContent = "Login fehlgeschlagen: " + e.message; }
   };
   document.getElementById('btn-register').onclick = async () => {
     try { await svc.register(document.getElementById('name').value, document.getElementById('email').value, document.getElementById('pw').value); }
-    catch(e){ document.getElementById('authMsg').textContent = e.message; }
+    catch(e){ document.getElementById('authMsg').textContent = "Registrierung fehlgeschlagen: " + e.message; }
   };
 
   let lastJSON = '';
@@ -504,7 +473,6 @@
     for(let i=0; i<CONFIG.days; i++){
       const n = order[i];
       const isOpened = !!state.opened[n];
-      // Türchen ist gesperrt, wenn es nicht Dezember ist ODER der Tag noch nicht erreicht ist
       const isLocked = (curMonth < CONFIG.startMonth) || (curMonth === CONFIG.startMonth && n > curDay);
       const btn = document.createElement('button');
       btn.className = `door ${isOpened ? 'opened' : ''} ${isLocked ? 'locked' : ''} ${n===24 ? 'day-24' : ''}`;
@@ -539,8 +507,6 @@
   }
 
   async function openDoor(user, day, x, y){
-    if (!user || !user.uid) return _toast('Fehler: Benutzer nicht angemeldet.');
-
     CONFETTI.burst(x,y);
     const seed = hash(`${user.uid}|${CONFIG.year}|${day}`);
     const rng = mul32(seed);
@@ -548,14 +514,13 @@
     
     let reward;
     
-    // Logik für Voucher Roll
     if(roll < CONFIG.probabilities.mealVoucher){
         const nonce = randHex(8);
         try {
           const sig = await svc.signVoucher({day, type:'meal', nonce});
           reward = { kind:'voucher', payload:{title:'Gratis Mittag', type:'meal', desc:'Gutschein für die Kantine (bis 4€)', code:sig.code, ...sig} };
           playSFX('win');
-        } catch(e) { return _toast('Fehler beim Laden des Vouchers'); }
+        } catch(e) { return _toast('Fehler beim Laden'); }
         
     } else if (roll < CONFIG.probabilities.mealVoucher + CONFIG.probabilities.snackVoucher) {
         const nonce = randHex(8);
@@ -563,7 +528,7 @@
           const sig = await svc.signVoucher({day, type:'snack', nonce});
           reward = { kind:'voucher', payload:{title:'Süßigkeit', type:'snack', desc:'Ein Snack nach Wahl an der Theke', code:sig.code, ...sig} };
           playSFX('win');
-        } catch(e) { return _toast('Fehler beim Laden des Vouchers'); }
+        } catch(e) { return _toast('Fehler beim Laden'); }
 
     } else {
         const msg = getMessageFor(user, day); 
@@ -571,10 +536,10 @@
         playSFX('open');
     }
 
-    // Speichern des neuen Zustands
     const opened = {...state.opened, [day]:true};
     const rewards = {...state.rewards, [day]:reward};
-    await svc.setUserDoc(user.uid, { opened, rewards });
+    // Update User in Firestore
+    await svc.setUserDoc(user.uid, { opened, rewards, lastUpdated: new Date().toISOString() });
     showReward(day, reward, user);
   }
 
@@ -618,96 +583,20 @@
     openModal();
   }
 
-  window.copyToClip = (txt, label) => { 
-    // Verwende document.execCommand für bessere iFrame-Kompatibilität
-    const textarea = document.createElement('textarea');
-    textarea.value = txt;
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
-      _toast(`${label} kopiert!`);
-    } catch (err) {
-      console.error('Kopieren fehlgeschlagen', err);
-      _toast(`Kopieren von ${label} fehlgeschlagen.`);
-    }
-    document.body.removeChild(textarea);
-  };
+  window.copyToClip = (txt, label) => { navigator.clipboard.writeText(txt).then(() => _toast(`${label} kopiert!`)); };
   function openModal(){ const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox'); b.style.display='flex'; setTimeout(()=>m.classList.add('active'),10); }
   document.getElementById('closeModal').onclick = () => { const b=document.getElementById('backdrop'); const m=document.getElementById('modalBox'); m.classList.remove('active'); setTimeout(()=>b.style.display='none',300); };
   window._toast = (msg) => { const t = document.getElementById('toast'); t.innerHTML = `<span>🔔</span> ${msg}`; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); };
 
   function renderBoard(users){
     let h = '<table><thead><tr><th>Name</th><th>Fortschritt</th></tr></thead><tbody>';
-    // Sortiere Benutzer nach Fortschritt absteigend
-    const sortedUsers = users.sort((a, b) => (Object.keys(b.opened || {}).length) - (Object.keys(a.opened || {}).length));
-
-    sortedUsers.forEach(u => {
+    users.forEach(u => {
       const c = Object.keys(u.opened||{}).length;
       h += `<tr><td>${u.name||'Unbekannt'}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#333;border-radius:3px;overflow:hidden"><div style="width:${(c/24)*100}%;background:#5de07a;height:100%"></div></div> ${c}</div></td></tr>`;
     });
     h += '</tbody></table>';
     document.getElementById('board').innerHTML = h;
   }
-
-  // ============== ADMIN TOOLS LOGIC =================
-  function setupAdminTools(svc) {
-      const admCode = document.getElementById('admCode');
-      const admMsg = document.getElementById('admMsg');
-      const btnVerify = document.getElementById('btnVerify');
-      const btnRedeem = document.getElementById('btnRedeem');
-
-      if (btnVerify) {
-          btnVerify.onclick = async () => {
-              admMsg.textContent = '';
-              const code = (admCode.value || '').trim();
-              if (!code) {
-                  admMsg.textContent = 'Bitte Code eingeben';
-                  return;
-              }
-              try {
-                  const res = await svc.verifyVoucher(code);
-                  if (res.ok) {
-                      admMsg.style.color = res.redeemed ? '#ff6b6b' : '#5de07a';
-                      admMsg.textContent = `Voucher OK | Typ: ${res.type.toUpperCase()} | Tag: ${res.day} | Name: ${res.name || 'Unbekannt'} | Status: ${res.redeemed ? 'BEREITS EINGELÖST' : 'GÜLTIG & NICHT EINGELÖST'}`;
-                  } else {
-                      admMsg.style.color = '#ff6b6b';
-                      admMsg.textContent = `Ungültig oder Fehler: ${res.reason || 'Unbekannt'}`;
-                  }
-              } catch (e) {
-                  admMsg.style.color = '#ff6b6b';
-                  admMsg.textContent = 'Fehler beim Prüfen: ' + (e.message || String(e));
-              }
-          };
-      }
-
-      if (btnRedeem) {
-          btnRedeem.onclick = async () => {
-              admMsg.textContent = '';
-              const code = (admCode.value || '').trim();
-              if (!code) {
-                  admMsg.textContent = 'Bitte Code eingeben';
-                  return;
-              }
-              try {
-                  const res = await svc.redeemVoucher(code);
-                  if (res.ok) {
-                      admMsg.style.color = '#5de07a';
-                      admMsg.textContent = `Voucher erfolgreich eingelöst!`;
-                      // Nach dem Einlösen erneut prüfen, um den Status zu aktualisieren
-                      if (btnVerify) btnVerify.onclick(); 
-                  } else {
-                      admMsg.style.color = '#ff6b6b';
-                      admMsg.textContent = `Einlösen fehlgeschlagen: ${res.reason || 'Unbekannt'}`;
-                  }
-              } catch (e) {
-                  admMsg.style.color = '#ff6b6b';
-                  admMsg.textContent = 'Einlösen fehlgeschlagen: ' + (e.message || String(e));
-              }
-          };
-      }
-  }
-  // ====================================================
 
   function getDoorOrder(y){
     const arr=Array.from({length:24},(_,i)=>i+1);
@@ -737,373 +626,79 @@
   function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=((h<<5)-h)+s.charCodeAt(i)|0; return h>>>0; }
   function mul32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296 } }
   
-  // =========================================================================
-  // DEMO-SERVICE (LOKALER SPEICHER) - BLEIBT FÜR DEN FALL, DASS KEINE CONFIG VORHANDEN IST
-  // =========================================================================
   async function makeDemoService(){
     const store = { get:(k)=>JSON.parse(localStorage.getItem('adv_v2_'+k)||'null'), set:(k,v)=>localStorage.setItem('adv_v2_'+k, JSON.stringify(v)) };
     let cbs = [];
     return {
-      register: async(n,e,p)=>{ 
-        const uid='u'+hash(e); 
-        if(store.get('u_'+uid)) throw new Error('E-Mail bereits registriert.');
-        store.set('u_'+uid, {name:n,email:e, isAdmin: false}); // Setze isAdmin auf false bei Registrierung
-        store.set('sess', {uid,name:n, isAuthReady: true}); 
-        cbs.forEach(f=>f({uid,name:n, isAuthReady: true})); 
-        _toast('Registrierung erfolgreich. Willkommen!');
-        return true; 
-      },
-      login: async(e,p)=>{ 
-        const uid='u'+hash(e); 
-        const userData = store.get('u_'+uid);
-        if(!userData) throw new Error('Benutzer unbekannt oder falsche E-Mail/Passwort.');
-        store.set('sess', {uid,name:userData.name, isAuthReady: true}); 
-        cbs.forEach(f=>f({uid,name:userData.name, isAuthReady: true})); 
-        _toast('Anmeldung erfolgreich.');
-        return true; 
-      },
-      logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); _toast('Abgemeldet.'); },
-      onAuth: (fn)=>{ 
-        cbs.push(fn); 
-        const user = store.get('sess');
-        if (user) user.isAuthReady = true; 
-        fn(user); 
-      },
-      // Simuliere onSnapshot für User-Daten
-      onUserDoc: async(uid, fn)=>{ 
-        const fire=()=>fn(store.get('data_'+uid)); 
-        fire(); 
-        setInterval(fire, 1000); 
-      },
-      setUserDoc: async(uid, d)=>{ 
-        const old=store.get('data_'+uid)||{}; 
-        store.set('data_'+uid, {...old, ...d}); 
-      },
-      // Simuliere isAdmin: Im Demo-Modus ist man nur Admin, wenn explizit ein Flag gesetzt ist.
-      isAdmin: async(uid) => {
-          const u = store.get('u_'+uid);
-          // Hartkodierter Check für den Demo Admin zum Testen
-          if (uid === 'u'+hash('admin@demo.de')) return true; 
-          return u && u.isAdmin === true;
-      },
-      onAllUsers: async(fn)=>{ 
-        // Lese alle registrierten Benutzer aus dem Store und filtere Demo-Daten heraus
-        const users = [];
-        for (const key in localStorage) {
-            if (key.startsWith('adv_v2_u_u')) { // Finde alle User-Infos
-                const userData = store.get(key.substring(8)); // 'u_'+uid
-                const userDoc = store.get('data_' + userData.uid);
-                if (userData) {
-                    users.push({
-                        uid: userData.uid,
-                        name: userData.name,
-                        opened: userDoc ? userDoc.opened : {}
-                    });
-                }
-            }
-        }
-        fn(users);
-      },
-      // Simuliere Voucher-Signierung
-      signVoucher: async({day,type,nonce})=>{ 
-          const sess = store.get('sess');
-          if (!sess) throw new Error('Anmeldung erforderlich');
-          const code=`D-${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${nonce.slice(0, 4)}`;
-          const vouchers = store.get('vouchers') || {};
-          const uid = sess.uid;
-          vouchers[code] = { code, type, day, uid, name: sess.name, year: CONFIG.year, redeemed: false };
-          store.set('vouchers', vouchers);
-          return {code: code, token: 'xxx', uid: uid, name: sess.name, year: CONFIG.year}; 
-      },
-      // Admin Logik für Demo
-      verifyVoucher: async(code) => {
-          const vouchers = store.get('vouchers') || {};
-          const v = vouchers[code];
-          if (!v) return { ok: false, reason: 'not-found' };
-          return { ok: true, redeemed: !!v.redeemed, type: v.type, day: v.day, year: v.year, uid: v.uid, name: v.name };
-      },
-      redeemVoucher: async(code) => {
-          const vouchers = store.get('vouchers') || {};
-          let v = vouchers[code];
-          if (!v) throw new Error('Unbekannter Code');
-          if (v.redeemed) throw new Error('Bereits eingelöst');
-          
-          v.redeemed = true;
-          v.redeemedAt = new Date().toISOString();
-          vouchers[code] = v;
-          store.set('vouchers', vouchers);
-          return { ok: true };
-      }
+      register: async(n,e,p)=>{ const uid='u'+hash(e); store.set('u_'+uid, {name:n,email:e}); store.set('sess', {uid,name:n}); cbs.forEach(f=>f({uid,name:n})); return true; },
+      login: async(e,p)=>{ const uid='u'+hash(e); if(!store.get('u_'+uid)) throw new Error('User unbekannt'); store.set('sess', {uid,name:store.get('u_'+uid).name}); cbs.forEach(f=>f({uid,name:store.get('u_'+uid).name})); return true; },
+      logout: async()=>{ store.set('sess', null); cbs.forEach(f=>f(null)); },
+      onAuth: (fn)=>{ cbs.push(fn); fn(store.get('sess')); },
+      onUserDoc: async(uid, fn)=>{ const fire=()=>fn(store.get('data_'+uid)); fire(); setInterval(fire, 1000); },
+      setUserDoc: async(uid, d)=>{ const old=store.get('data_'+uid)||{}; store.set('data_'+uid, {...old, ...d}); },
+      isAdmin: async()=>true,
+      onAllUsers: async(fn)=>{ fn([{name:'Max', opened:{1:true,2:true}}, {name:'Lisa', opened:{1:true}}]); },
+      signVoucher: async({day,type,nonce})=>{ return {code:`DEMO-${type}-${day}-${nonce}`, token:'xxx'}; }
     };
   }
 
-  // =========================================================================
-  // LIVE-SERVICE (FIREBASE / FIRESTORE)
-  // =========================================================================
-
-  async function makeLiveService(){
-    
-    // Importiere Firebase Module
-    // Wichtig: Verwende die von Canvas bereitgestellten Versionen 
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-    const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-    const { getFirestore, doc, setDoc, onSnapshot, collection, query, getDocs, updateDoc, where, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-    const { setLogLevel } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-    
-    // Firebase Initialisierung
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    
-    setLogLevel('error'); // Fehlerprotokollierung für Firestore
-
-    // Pfade-Konstanten (Canvas-spezifisch)
-    const USERS_COL = `artifacts/${appId}/users`;
-    const PUBLIC_DATA_COL = `artifacts/${appId}/public/data/users`;
-    const ADMIN_COL = `artifacts/${appId}/public/data/admins`;
-
-    let authCb = () => {};
-    let isAuthReady = false;
-    let currentUserId = null;
-    let currentUserName = null;
-
-    // Canvas-Authentifizierung mit Initial-Token
-    if (typeof __initial_auth_token !== 'undefined') { 
-        try {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } catch(error) {
-            console.error('Initial-Token-Anmeldung fehlgeschlagen:', error);
-            // Wir warten hier auf die manuelle Anmeldung des Benutzers über E-Mail/Passwort
-        }
-    } 
-
-    // Auth State Listener
-    onAuthStateChanged(auth, async (user) => {
-        isAuthReady = true;
-        if (user) {
-            currentUserId = user.uid;
-            
-            // Lade den Anzeigenamen des Benutzers aus Firestore, falls vorhanden
-            const userRef = doc(db, USERS_COL, currentUserId);
-            const userSnap = await getDoc(userRef);
-            if(userSnap.exists()) {
-                // Name aus dem privaten Benutzerdokument nehmen
-                currentUserName = userSnap.data().name;
-            } else {
-                // Fallback, wenn Dokument noch nicht existiert (z.B. nach CustomToken Sign-In ohne vorherige Registrierung)
-                currentUserName = user.email ? user.email.split('@')[0] : 'Benutzer';
-            }
-
-            // Aufruf des Auth-Callbacks
-            authCb({ 
-                uid: currentUserId, 
-                name: currentUserName, 
-                isAuthReady: true // Bestätigt, dass Auth abgeschlossen ist
-            });
-        } else {
-            currentUserId = null;
-            currentUserName = null;
-            authCb(null);
-        }
-    });
-
-    // Hilfsfunktion zur Abfrage von Benutzerdaten (Kalenderstatus)
-    const onUserDoc = (uid, fn) => {
-        if (!uid) return () => {}; 
-        // Privater Pfad: /artifacts/{appId}/users/{userId}/calendar/state
-        const userCalendarRef = doc(db, USERS_COL, uid, 'calendar', 'state');
-        return onSnapshot(userCalendarRef, (docSnap) => {
-            fn(docSnap.data());
-        }, (error) => {
-            console.error('Fehler beim Abhören der Benutzerdaten:', error);
-            _toast('Fehler beim Laden der Kalenderdaten.');
-        });
-    };
-
-    // Hilfsfunktion zum Speichern von Benutzerdaten (Kalenderstatus)
-    const setUserDoc = async (uid, data) => {
-        if (!uid) return;
-        // Privater Pfad: /artifacts/{appId}/users/{userId}/calendar/state
-        const userCalendarRef = doc(db, USERS_COL, uid, 'calendar', 'state');
-        // Öffentlicher Pfad: /artifacts/{appId}/public/data/users/{userId}
-        const publicUserRef = doc(db, PUBLIC_DATA_COL, uid);
-
-        try {
-            // 1. Speichern der privaten Kalenderdaten
-            await setDoc(userCalendarRef, data, { merge: true });
-
-            // 2. Aktualisieren der öffentlichen Fortschrittsdaten (für Leaderboard)
-            const openedCount = Object.keys(data.opened || {}).length;
-            await updateDoc(publicUserRef, { opened: data.opened || {}, openedCount: openedCount, lastUpdate: new Date() });
-
-        } catch(error) {
-            console.error('Fehler beim Speichern der Benutzerdaten:', error);
-            _toast('Fehler beim Speichern des Fortschritts.');
-        }
-    };
-    
-    // Hilfsfunktion zur Überprüfung der Admin-Rolle
-    const isAdmin = async (uid) => {
-        if (!uid) return false;
-        // Öffentlicher Pfad: /artifacts/{appId}/public/data/admins/{userId}
-        const adminRef = doc(db, ADMIN_COL, uid);
-        try {
-            const adminSnap = await getDoc(adminRef);
-            return adminSnap.exists();
-        } catch(error) {
-            console.error('Fehler beim Prüfen der Admin-Rolle:', error);
-            return false;
-        }
-    };
-    
-    // Hilfsfunktion zur Abfrage aller Benutzer für die Rangliste
-    const onAllUsers = (fn) => {
-        // Öffentlicher Pfad: /artifacts/{appId}/public/data/users
-        const q = query(collection(db, PUBLIC_DATA_COL)); 
-        return onSnapshot(q, (snapshot) => {
-            const users = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.name) {
-                    users.push({
-                        uid: doc.id,
-                        name: data.name,
-                        opened: data.opened || {} 
-                    });
-                }
-            });
-            fn(users);
-        }, (error) => {
-            console.error('Fehler beim Abhören der Benutzer-Rangliste:', error);
-            _toast('Fehler beim Laden der Team-Übersicht.');
-        });
-    };
-
-    // Hilfsfunktion zur Signierung von Vouchern
-    // ACHTUNG: Dies ist Dummy-Logik, da die serverseitige Logik (Cloud Functions) fehlt.
-    // In einer echten Umgebung müsste hier ein sicherer Aufruf erfolgen.
-    const signVoucher = async ({day, type, nonce}) => {
-         if (!currentUserId) throw new Error('Anmeldung erforderlich für Voucher');
-         const token = `SIG-${randHex(10)}`; // Einfache Signatur
-         const code = `${type.toUpperCase().slice(0,1)}-${String(day).padStart(2,'0')}-${randHex(4)}`;
-         return { code, token, uid: currentUserId, name: currentUserName, year: CONFIG.year };
-    };
-
-    // Dummy-Implementierung für Admin-Tools: Prüfen und Einlösen
-    // Diese Logik sollte serverseitig in Cloud Functions implementiert werden!
-    // Für den Prototyp verwenden wir eine einfache Speicherung im Admin-Dokument
-    const VOUCHERS_DOC = doc(db, ADMIN_COL, 'voucher_ledger');
-    
-    const verifyVoucher = async (code) => {
-        try {
-            const snap = await getDoc(VOUCHERS_DOC);
-            const ledger = snap.exists() ? snap.data() : {};
-            const v = ledger[code];
-
-            if (!v) return { ok: false, reason: 'not-found' };
-
-            // Einfache Validierung des Dummy-Codes
-            const parts = code.split('-');
-            if (parts.length < 3 || (parts[0] !== 'M' && parts[0] !== 'S')) return { ok: false, reason: 'invalid-format' };
-
-            return { 
-                ok: true, 
-                redeemed: !!v.redeemed, 
-                type: v.type, 
-                day: v.day, 
-                year: v.year, 
-                uid: v.uid, 
-                name: v.name 
-            };
-        } catch(e) {
-            console.error('Fehler beim Prüfen des Vouchers:', e);
-            throw new Error('Fehler beim Zugriff auf Voucher-Datenbank.');
-        }
-    };
-
-    const redeemVoucher = async (code) => {
-        const check = await verifyVoucher(code);
-        if (!check.ok) throw new Error('Ungültiger Code: ' + check.reason);
-        if (check.redeemed) throw new Error('Code bereits eingelöst.');
-
-        try {
-            const redeemedAt = new Date().toISOString();
-            // Aktualisiere das Ledger: setze redeemed auf true
-            await updateDoc(VOUCHERS_DOC, { 
-                [code + '.redeemed']: true,
-                [code + '.redeemedAt']: redeemedAt
-            });
-
-            return { ok: true, redeemedAt: redeemedAt };
-        } catch(e) {
-            console.error('Fehler beim Einlösen des Vouchers:', e);
-            throw new Error('Fehler beim Speichern des Einlösevorgangs.');
-        }
-    };
-
-    // Registriert den generierten Voucher im Admin Ledger für die Überprüfung
-    const registerVoucherInLedger = async (data) => {
-        const code = data.code;
-        const entry = {
-            code: data.code,
-            type: data.type,
-            day: data.day,
-            uid: data.uid,
-            name: data.name,
-            year: CONFIG.year,
-            redeemed: false,
-            generatedAt: new Date().toISOString()
-        };
-        // Füge das Voucher-Objekt unter seinem Code in das Ledger-Dokument ein (merge: true)
-        await setDoc(VOUCHERS_DOC, { [code]: entry }, { merge: true });
-    };
-
-
+  async function makeLiveService(){ 
     return {
-        register: async(name, email, password) => {
-            // Firebase Auth Registrierung
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const uid = userCredential.user.uid;
-
-            // Privates Dokument (enthält Name)
-            await setDoc(doc(db, USERS_COL, uid), { name: name, email: email, createdAt: new Date() });
-
-            // WICHTIGE KORREKTUR: Name beim ersten Setzen in das öffentliche Dokument aufnehmen
-            await setDoc(doc(db, PUBLIC_DATA_COL, uid), { name: name, opened: {}, openedCount: 0, lastLogin: new Date() }, { merge: true });
-
-            _toast('Registrierung erfolgreich. Willkommen!');
-        },
-        login: async(email, password) => {
-            // Firebase Auth Anmeldung
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const uid = userCredential.user.uid;
-
-            // Aktualisiere öffentliche Daten (z.B. letzter Login)
-            await updateDoc(doc(db, PUBLIC_DATA_COL, uid), { lastLogin: new Date() });
-            _toast('Anmeldung erfolgreich.');
-        },
-        logout: async() => {
-            await signOut(auth);
-            _toast('Abgemeldet.');
-        },
-        onAuth: (fn) => {
-            authCb = fn; // Setze den Callback, der im onAuthStateChanged verwendet wird
-            // Wenn der Auth-Status bereits bekannt ist, rufe den Callback sofort auf
-            if (isAuthReady) {
-                authCb(auth.currentUser ? { uid: auth.currentUser.uid, name: currentUserName, isAuthReady: true } : null);
-            }
-        },
-        onUserDoc,
-        setUserDoc,
-        isAdmin,
-        onAllUsers,
-        signVoucher: async (params) => {
-            const result = await signVoucher({ ...params, uid: currentUserId, name: currentUserName });
-            await registerVoucherInLedger(result); // Speichere den Dummy-Voucher im Ledger
-            return result;
-        },
-        verifyVoucher,
-        redeemVoucher,
+      register: async (name, email, pw) => {
+        const cred = await createUserWithEmailAndPassword(auth, email, pw);
+        await updateProfile(cred.user, { displayName: name });
+        // Initiales User-Doc erstellen
+        await setDoc(doc(db, 'adv_users', cred.user.uid), {
+           name: name,
+           opened: {},
+           rewards: {},
+           lastUpdated: new Date().toISOString()
+        }, { merge: true });
+        return true;
+      },
+      login: async (email, pw) => {
+        await signInWithEmailAndPassword(auth, email, pw);
+        return true;
+      },
+      logout: async () => {
+        await signOut(auth);
+      },
+      onAuth: (cb) => {
+        onAuthStateChanged(auth, (user) => {
+          if(user) cb({ uid: user.uid, name: user.displayName, email: user.email });
+          else cb(null);
+        });
+      },
+      onUserDoc: (uid, cb) => {
+        return onSnapshot(doc(db, 'adv_users', uid), (snap) => {
+          if(snap.exists()) cb(snap.data());
+          else cb(null);
+        });
+      },
+      setUserDoc: async (uid, data) => {
+        // Daten in adv_users speichern
+        await setDoc(doc(db, 'adv_users', uid), data, { merge: true });
+      },
+      isAdmin: async (uid) => {
+        // Prüfen, ob User in adv_admins existiert
+        const d = await getDoc(doc(db, 'adv_admins', uid));
+        return d.exists(); 
+      },
+      onAllUsers: (cb) => {
+        // Holt alle User für das Admin-Board
+        return onSnapshot(collection(db, 'adv_users'), (snap) => {
+          const users = [];
+          snap.forEach(d => users.push(d.data()));
+          cb(users);
+        });
+      },
+      signVoucher: async ({day, type, nonce}) => {
+        // Hinweis: Client-seitiges Signieren ist nicht 100% sicher, reicht aber für einfache Zwecke ohne Cloud Functions.
+        return { 
+           code: `GAB-${type.toUpperCase()}-${day}-${nonce}`, 
+           token: randHex(12) 
+        };
+      }
     };
   }
   </script>
